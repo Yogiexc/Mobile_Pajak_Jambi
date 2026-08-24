@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/colors.dart';
+import '../utils/responsive.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,8 +28,9 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+          padding: context.pageInsets.copyWith(left: context.pagePadding, right: context.pagePadding),
+          child: context.constrainContent(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
@@ -42,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'Selamat Datang\nkembali.',
                 style: GoogleFonts.lora(
-                  fontSize: 32,
+                  fontSize: context.sp(32),
                   fontWeight: FontWeight.w600,
                   fontStyle: FontStyle.italic,
                   color: AppColors.primaryDark,
@@ -160,6 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

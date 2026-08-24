@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import '../utils/responsive.dart';
 
 class DetailPajakScreen extends StatelessWidget {
   final String? billId;
@@ -59,8 +60,9 @@ class DetailPajakScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+          padding: EdgeInsets.all(context.pagePadding),
+          child: context.constrainContent(
+            child: Column(
             children: [
               // White Detail Card
               Container(
@@ -178,6 +180,7 @@ class DetailPajakScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/colors.dart';
+import '../utils/responsive.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
   final String? billId;
@@ -38,8 +39,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+          padding: EdgeInsets.all(context.pagePadding),
+          child: context.constrainContent(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -105,6 +107,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import '../utils/responsive.dart';
 
 class CheckTaxScreen extends StatefulWidget {
   final String serviceName;
@@ -63,8 +64,9 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+          padding: EdgeInsets.all(context.pagePadding),
+          child: context.constrainContent(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -123,6 +125,7 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

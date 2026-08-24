@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import '../utils/responsive.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,7 +40,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.pagePadding,
+              vertical: context.isSmallPhone ? 12 : 20,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -47,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'Halo, Dexa Wafinugrafi',
                   style: GoogleFonts.lora(
-                    fontSize: 24,
+                    fontSize: context.sp(24),
                     fontWeight: FontWeight.w600,
                     fontStyle: FontStyle.italic,
                     color: AppColors.primaryDark,
@@ -61,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Column(
                     children: [
                       SizedBox(
-                        height: 210, // Fixed height for the cards to allow swipe
+                        height: context.sp(210).clamp(180, 240),
                         child: PageView.builder(
                           controller: _pageController,
                           onPageChanged: (index) {
@@ -473,7 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(
               formatter.format(bill.amount),
               style: GoogleFonts.inter(
-                fontSize: 28,
+                fontSize: context.sp(28),
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),

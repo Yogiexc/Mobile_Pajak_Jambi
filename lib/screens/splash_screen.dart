@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/colors.dart';
+import '../utils/responsive.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -16,22 +17,24 @@ class SplashScreen extends StatelessWidget {
           gradient: AppColors.welcomeBg,
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 50),
-              // Actual Logo from Figma
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxHeight < 700;
+              return Column(
+                children: [
+              SizedBox(height: compact ? 24 : 50),
               Column(
                 children: [
                   Image.asset(
                     'assets/images/logo.png',
-                    height: 80,
+                    height: compact ? 56 : context.sp(80),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'PEMERINTAH\nKOTA JAMBI',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
-                      fontSize: 10,
+                      fontSize: compact ? 9 : 10,
                       fontWeight: FontWeight.w700,
                       color: AppColors.primaryDark,
                     ),
@@ -39,14 +42,13 @@ class SplashScreen extends StatelessWidget {
                 ],
               ),
               
-              const SizedBox(height: 32),
+              SizedBox(height: compact ? 16 : 32),
               
-              // Title
               Text(
                 'Bayar Pajak,\nBangun Jambi',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.lora(
-                  fontSize: 28,
+                  fontSize: context.sp(compact ? 24 : 28),
                   fontWeight: FontWeight.w600,
                   fontStyle: FontStyle.italic,
                   color: AppColors.primaryDark,
@@ -77,7 +79,8 @@ class SplashScreen extends StatelessWidget {
               
               // Button (overlaps slightly or sits just below)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24).copyWith(bottom: 40, top: 16),
+                padding: EdgeInsets.symmetric(horizontal: context.pagePadding)
+                    .copyWith(bottom: compact ? 24 : 40, top: 16),
                 child: Container(
                   width: double.infinity,
                   height: 52,
@@ -113,6 +116,8 @@ class SplashScreen extends StatelessWidget {
                 ),
               ),
             ],
+              );
+            },
           ),
         ),
       ),
