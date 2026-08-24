@@ -112,6 +112,15 @@ class DetailPajakScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
+                      bill.namaObjek,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
                       '$shortLabel: ${bill.taxId}',
                       style: GoogleFonts.inter(
                         fontSize: 12,
@@ -120,7 +129,7 @@ class DetailPajakScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      currencyFormatter.format(bill.amount),
+                      currencyFormatter.format(bill.amount + bill.denda),
                       style: GoogleFonts.inter(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -129,7 +138,7 @@ class DetailPajakScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Termasuk biaya denda sebesar Rp 0',
+                      'Termasuk biaya denda sebesar ${currencyFormatter.format(bill.denda)}',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: AppColors.textSecondary,
@@ -141,12 +150,12 @@ class DetailPajakScreen extends StatelessWidget {
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(color: Color(0xFFF3F4F6), height: 1),
                     ),
-                    _buildRow('Denda', 'Rp 0'),
+                    _buildRow('Denda', currencyFormatter.format(bill.denda)),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(color: Color(0xFFF3F4F6), height: 1),
                     ),
-                    _buildRow('Total', currencyFormatter.format(bill.amount), isBold: true),
+                    _buildRow('Total', currencyFormatter.format(bill.amount + bill.denda), isBold: true),
                   ],
                 ),
               ),

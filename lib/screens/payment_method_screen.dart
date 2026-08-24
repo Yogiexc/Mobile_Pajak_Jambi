@@ -96,7 +96,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                     ),
                   ),
                   child: Text(
-                    'Konfirmasi Bank',
+                    'Lanjut',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

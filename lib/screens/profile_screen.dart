@@ -59,7 +59,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Dexa Wahnugrah',
+                      taxProvider.userName ?? 'Akun Dummy',
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -68,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '+62 812-3456-7890',
+                      taxProvider.userPhone ?? '+62 800-0000-0000',
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -109,76 +109,11 @@ class ProfileScreen extends StatelessWidget {
                   _buildMenuItem(Icons.person_outline, 'Edit Profil', onTap: () => context.push('/edit-profile')),
                   _buildMenuDivider(),
                   _buildMenuItem(Icons.account_balance_outlined, 'Rekening Bank', onTap: () => context.push('/linked-bank')),
-                  _buildMenuDivider(),
-                  _buildMenuItem(Icons.credit_card_outlined, 'Kartu Tertaut', onTap: () => context.push('/linked-card')),
                 ],
               ),
               const SizedBox(height: 24),
 
-              // Pajak Terdaftar Section
-              _buildSection(
-                title: 'Pajak Terdaftar',
-                items: taxProvider.pendingBills.isEmpty
-                    ? [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            'Belum ada pajak yang didaftarkan.',
-                            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
-                          ),
-                        )
-                      ]
-                    : taxProvider.pendingBills.map((bill) {
-                        final config = TaxConfigManager.getDetailConfig(bill.title);
-                        return Column(
-                          children: [
-                            ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: config.color.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(config.icon, color: config.color, size: 20),
-                              ),
-                              title: Text(
-                                bill.title,
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryDark,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    bill.taxId,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Jatuh Tempo: ${DateFormat('dd MMM yyyy', 'id_ID').format(bill.dueDate)}',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.danger,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (bill != taxProvider.pendingBills.last) _buildMenuDivider(),
-                          ],
-                        );
-                      }).toList(),
-              ),
-              const SizedBox(height: 24),
+
 
               _buildSection(
                 title: 'General',

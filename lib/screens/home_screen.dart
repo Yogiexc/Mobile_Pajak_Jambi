@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 // Header
                 Text(
-                  'Halo, Dexa Wafinugrafi',
+                  'Halo, ${taxProvider.userName?.split(' ').first ?? 'Pengguna'}',
                   style: GoogleFonts.lora(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
@@ -131,9 +131,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Wrap(
                   spacing: 12,
                   runSpacing: 16,
+                  alignment: WrapAlignment.spaceEvenly,
                   children: TaxConfigManager.mainMenus.map((config) {
                     return SizedBox(
-                      width: (MediaQuery.of(context).size.width - 48 - 36) / 4, // 4 items per row
+                      width: (MediaQuery.of(context).size.width - 48 - 24) / 3, // 3 items per row
                       child: _buildMainMenu(context, config),
                     );
                   }).toList(),
@@ -362,7 +363,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMainMenu(BuildContext context, MainMenuConfig config) {
     return GestureDetector(
       onTap: () {
-        context.push('/check-tax/${config.title}');
+        if (config.title == 'Pajak PBB') {
+          context.push('/pbb-list');
+        } else if (config.title == 'Pajak Lainnya') {
+          if (context.read<TaxProvider>().hasNpwpd) {
+            context.push('/other-taxes');
+          } else {
+            final encodedTitle = Uri.encodeComponent('Pajak Lainnya');
+            context.push('/check-tax/$encodedTitle');
+          }
+        } else {
+          final encodedTitle = Uri.encodeComponent(config.title);
+          context.push('/check-tax/$encodedTitle');
+        }
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,

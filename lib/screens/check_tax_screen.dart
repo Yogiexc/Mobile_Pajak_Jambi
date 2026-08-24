@@ -17,29 +17,51 @@ class CheckTaxScreen extends StatefulWidget {
 
 class _CheckTaxScreenState extends State<CheckTaxScreen> {
   final _taxIdController = TextEditingController();
-  late MainMenuConfig _config;
+  late TaxConfig _config;
 
   @override
   void initState() {
     super.initState();
-    _config = TaxConfigManager.getMainMenu(widget.serviceName);
+    // Use getDetailConfig instead of getMainMenu to support sub-taxes
+    _config = TaxConfigManager.getDetailConfig(widget.serviceName);
   }
 
   void _checkTax() {
     if (_taxIdController.text.isNotEmpty) {
-      if (widget.serviceName == 'PBJT') {
-        context.push('/select-pbjt', extra: _taxIdController.text);
-      } else {
-        context.read<TaxProvider>().addBill(_taxIdController.text, widget.serviceName);
-        
+      if (widget.serviceName == 'Pajak Lainnya') {
+        context.read<TaxProvider>().addNpwpd(_taxIdController.text);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Pencarian berhasil. Tagihan terkait ditambahkan ke Beranda!'),
+            content: Text('NPWPD berhasil didaftarkan!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.pushReplacement('/other-taxes');
+      } else if (widget.serviceName == 'Pajak PBB') {
+        context.read<TaxProvider>().addNop(_taxIdController.text);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('NOP berhasil didaftarkan!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.pop(); // Go back to PBB List
+      } else {
+        // For BPHTB and specific PBJT types
+        context.read<TaxProvider>().addBill(_taxIdController.text, widget.serviceName);
+        
+        // Get the newly added bill's ID
+        final newBill = context.read<TaxProvider>().pendingBills.last;
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pencarian berhasil. Tagihan ditemukan!'),
             backgroundColor: AppColors.success,
           ),
         );
         
-        context.pop();
+        // Go straight to detail page instead of home
+        context.pushReplacement('/detail', extra: newBill.id);
       }
     }
   }
@@ -82,10 +104,10 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _taxIdController,
-                keyboardType: _config.keyboardType,
+                keyboardType: TextInputType.text,
                 textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(
-                  hintText: _config.hintText,
+                  hintText: widget.serviceName == 'Pajak PBB' ? 'Contoh: 15.71.010.001.001-0123.0' : (widget.serviceName == 'BPHTB' ? 'Contoh: TR-2026-00123' : 'Contoh: P.001234567890'),
                   hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
                   filled: true,
                   fillColor: AppColors.bgWhite,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/tax_provider.dart';
 import '../constants/colors.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -14,9 +16,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _pinController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
+
   void _handleRegister() {
-    // In a real app we'd validate and register here, 
-    // then navigate to the onboarding screen.
+    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty || _pinController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harap lengkapi semua kolom wajib (termasuk PIN).'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    context.read<TaxProvider>().registerUser(
+      _nameController.text, 
+      _emailController.text, 
+      _phoneController.text, 
+      _passwordController.text,
+      _pinController.text,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Akun berhasil dibuat!'), backgroundColor: AppColors.success),
+    );
+
     context.go('/register-nop');
   }
 
@@ -82,6 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 8),
               TextFormField(
+                controller: _nameController,
                 decoration: const InputDecoration(
                   hintText: 'Masukkan nama lengkap',
                 ),
@@ -117,6 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 8),
               TextFormField(
+                controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   hintText: 'nama@email.com',
@@ -134,6 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 8),
               TextFormField(
+                controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
                   hintText: '0812-3456-7890',
@@ -152,6 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 8),
               TextFormField(
+                controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   hintText: 'Minimal 8 karakter',
@@ -194,6 +233,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         _obscureConfirm = !_obscureConfirm;
                       });
                     },
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+              
+              Text(
+                'Buat PIN Keamanan (6 Digit)',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _pinController,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan 6 digit angka',
+                  counterText: "",
+                  suffixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: AppColors.textHint,
                   ),
                 ),
               ),

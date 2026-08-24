@@ -54,6 +54,8 @@ class _SelectPbjtScreenState extends State<SelectPbjtScreen> {
     final List<Map<String, dynamic>> activeTaxes = [
       {'title': 'PBJT Makanan & Minuman', 'status': 'Ada Tagihan', 'color': Colors.red},
       {'title': 'PBJT Perhotelan', 'status': 'Lunas', 'color': AppColors.success},
+      {'title': 'Pajak Reklame', 'status': 'Ada Tagihan', 'color': Colors.red},
+      {'title': 'Pajak Air Tanah', 'status': 'Tidak Ada Data', 'color': Colors.grey},
       {'title': 'PBJT Parkir', 'status': 'Tidak Ada Data', 'color': Colors.grey},
     ];
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/tax_provider.dart';
 import '../constants/colors.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,6 +22,33 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _handleLogin() {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harap masukkan Email/Nomor HP dan Kata Sandi.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final success = context.read<TaxProvider>().loginUser(
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login berhasil!'), backgroundColor: AppColors.success),
+      );
+      context.go('/home'); // Or /register-nop if we want to force onboarding again, but usually login goes to home.
+      // Wait, if they login, they might want to see the home.
+      // We will route to home.
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email/Nomor HP atau kata sandi salah, atau belum mendaftar.'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -127,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => context.go('/home'),
+                  onPressed: _handleLogin,
                   child: const Text('Masuk'),
                 ),
               ),

@@ -20,7 +20,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
   final List<Map<String, String>> _addedTaxes = [];
 
   final List<MainMenuConfig> _registerOptions = TaxConfigManager.mainMenus
-      .where((menu) => menu.title == 'Pajak PBB' || menu.title == 'PBJT')
+      .where((menu) => menu.title == 'Pajak PBB' || menu.title == 'Pajak Lainnya')
       .toList();
 
   @override
@@ -35,7 +35,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
     if (_taxIdController.text.isEmpty) return;
     final provider = context.read<TaxProvider>();
     final taxId = _taxIdController.text;
-    final isNpwpd = _selectedConfig.title == 'PBJT';
+    final isNpwpd = _selectedConfig.title == 'Pajak Lainnya';
 
     if (isNpwpd && provider.hasNpwpd) {
       ScaffoldMessenger.of(context).showSnackBar(

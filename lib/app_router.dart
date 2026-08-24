@@ -19,9 +19,10 @@ import 'screens/processing_screen.dart';
 import 'screens/faq_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/linked_bank_screen.dart';
-import 'screens/linked_card_screen.dart';
 import 'screens/privacy_policy_screen.dart';
 import 'screens/terms_screen.dart';
+import 'screens/other_taxes_screen.dart';
+import 'screens/pbb_list_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -103,7 +104,8 @@ class AppRouter {
       GoRoute(
         path: '/check-tax/:serviceName',
         builder: (context, state) {
-          final serviceName = state.pathParameters['serviceName'] ?? 'Pajak';
+          final encodedServiceName = state.pathParameters['serviceName'] ?? 'Pajak';
+          final serviceName = Uri.decodeComponent(encodedServiceName);
           return CheckTaxScreen(serviceName: serviceName);
         },
       ),
@@ -140,9 +142,14 @@ class AppRouter {
         path: '/linked-bank',
         builder: (context, state) => const LinkedBankScreen(),
       ),
+
       GoRoute(
-        path: '/linked-card',
-        builder: (context, state) => const LinkedCardScreen(),
+        path: '/pbb-list',
+        builder: (context, state) => const PbbListScreen(),
+      ),
+      GoRoute(
+        path: '/other-taxes',
+        builder: (context, state) => const OtherTaxesScreen(),
       ),
       GoRoute(
         path: '/privacy-policy',
