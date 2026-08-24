@@ -79,8 +79,8 @@ class PaymentSuccessScreen extends StatelessWidget {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Back to Home properly
-                    context.go('/home');
+                    // Navigate to history or receipt
+                    context.go('/history');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryDark,
@@ -90,7 +90,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Bagikan Bukti Lunas',
+                    'Lihat Bukti Pembayaran',
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

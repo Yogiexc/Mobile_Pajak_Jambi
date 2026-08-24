@@ -20,7 +20,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
   final List<Map<String, String>> _addedTaxes = [];
 
   final List<MainMenuConfig> _registerOptions = TaxConfigManager.mainMenus
-      .where((menu) => menu.title != 'BPHTB') // Exclude BPHTB because it's transactional
+      .where((menu) => menu.title == 'Pajak PBB' || menu.title == 'PBJT')
       .toList();
 
   @override
@@ -29,25 +29,52 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
     _selectedConfig = _registerOptions.first;
   }
 
-  void _handleAddTax() {
-    if (_taxIdController.text.isNotEmpty) {
-      // Add to provider
-      context.read<TaxProvider>().addBill(_taxIdController.text, _selectedConfig.title);
-      
-      // Keep track locally for UI feedback
-      setState(() {
-        _addedTaxes.add({'type': _selectedConfig.title, 'taxId': _taxIdController.text});
-        _taxIdController.clear();
-      });
-      
+  bool _isLoading = false;
+
+  Future<void> _handleAddTax() async {
+    if (_taxIdController.text.isEmpty) return;
+    final provider = context.read<TaxProvider>();
+    final taxId = _taxIdController.text;
+    final isNpwpd = _selectedConfig.title == 'PBJT';
+
+    if (isNpwpd && provider.hasNpwpd) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_selectedConfig.title} berhasil didaftarkan!'),
-          backgroundColor: AppColors.success,
-          duration: const Duration(seconds: 2),
+        const SnackBar(
+          content: Text('Anda sudah mendaftarkan NPWPD. Satu akun hanya boleh memiliki 1 NPWPD.'),
+          backgroundColor: Colors.red,
         ),
       );
+      return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Simulate verification API call
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
+    if (isNpwpd) {
+      provider.addNpwpd(taxId);
+    } else {
+      provider.addNop(taxId);
+    }
+
+    setState(() {
+      _addedTaxes.add({'type': _selectedConfig.title, 'taxId': taxId});
+      _taxIdController.clear();
+      _isLoading = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${_selectedConfig.title} berhasil didaftarkan!'),
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _finishSetup() {
@@ -194,18 +221,20 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
                       width: double.infinity,
                       height: 52,
                       child: OutlinedButton.icon(
-                        onPressed: _handleAddTax,
-                        icon: const Icon(Icons.add, color: AppColors.primaryDark),
+                        onPressed: _isLoading ? null : _handleAddTax,
+                        icon: _isLoading 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.add, color: AppColors.primaryDark),
                         label: Text(
-                          'Daftarkan Sekarang',
+                          _isLoading ? 'Mencari Data...' : 'Daftarkan Sekarang',
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primaryDark,
+                            color: _isLoading ? Colors.grey : AppColors.primaryDark,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.primaryDark),
+                          side: BorderSide(color: _isLoading ? Colors.grey : AppColors.primaryDark),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

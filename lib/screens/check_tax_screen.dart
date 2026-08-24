@@ -27,16 +27,20 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
 
   void _checkTax() {
     if (_taxIdController.text.isNotEmpty) {
-      context.read<TaxProvider>().addBill(_taxIdController.text, widget.serviceName);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Pencarian berhasil. Tagihan terkait ditambahkan ke Beranda!'),
-          backgroundColor: AppColors.success,
-        ),
-      );
-      
-      context.pop();
+      if (widget.serviceName == 'PBJT') {
+        context.push('/select-pbjt', extra: _taxIdController.text);
+      } else {
+        context.read<TaxProvider>().addBill(_taxIdController.text, widget.serviceName);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pencarian berhasil. Tagihan terkait ditambahkan ke Beranda!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        
+        context.pop();
+      }
     }
   }
 

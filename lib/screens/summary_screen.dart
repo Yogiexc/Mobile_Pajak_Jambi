@@ -183,8 +183,11 @@ class SummaryScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    context.read<TaxProvider>().payBill(bill.id, bankName, isQris);
-                    context.go('/success');
+                    context.push('/pin', extra: {
+                      'billId': bill.id,
+                      'bankName': bankName,
+                      'isQris': isQris,
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryDark,

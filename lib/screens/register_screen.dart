@@ -90,6 +90,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 20),
               
               Text(
+                'NIK (Nomor Induk Kependudukan)',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  hintText: 'Masukkan 16 digit NIK',
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+              
+              Text(
+                'Email',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  hintText: 'nama@email.com',
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+              Text(
                 'Nomor HP',
                 style: GoogleFonts.inter(
                   fontSize: 13,

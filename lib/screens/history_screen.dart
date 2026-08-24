@@ -13,7 +13,15 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  int _selectedTab = 0; // 0: Semua, 1: Berhasil, 2: Gagal
+  String _selectedTab = 'Semua';
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,12 +32,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
       decimalDigits: 0,
     );
     
-    // Filter history based on tab
+    // Filter history based on tab and search
     List<TaxTransaction> filteredHistory = taxProvider.history;
-    if (_selectedTab == 1) {
-      filteredHistory = filteredHistory.where((t) => t.isSuccess).toList();
-    } else if (_selectedTab == 2) {
-      filteredHistory = filteredHistory.where((t) => !t.isSuccess).toList();
+    
+    if (_selectedTab != 'Semua') {
+      filteredHistory = filteredHistory.where((t) {
+        if (_selectedTab == 'PBB') return t.title.contains('PBB');
+        if (_selectedTab == 'BPHTB') return t.title.contains('BPHTB');
+        if (_selectedTab == 'PBJT') return t.title.contains('PBJT');
+        return true;
+      }).toList();
+    }
+
+    if (_searchQuery.isNotEmpty) {
+      filteredHistory = filteredHistory.where((t) => 
+        t.taxId.toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
     }
 
     return Scaffold(
@@ -39,7 +57,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -52,26 +70,62 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       color: AppColors.primaryDark,
                     ),
                   ),
-                  const Icon(Icons.search, color: AppColors.primaryDark),
                 ],
               ),
             ),
             
-            // Tabs
+            // Search Bar
             Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Cari NOP / NPWPD...',
+                  hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
+                  prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
+                  filled: true,
+                  fillColor: AppColors.bgWhite,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primaryDark),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Tabs
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children: [
-                  _buildTab(0, 'Semua'),
-                  const SizedBox(width: 12),
-                  _buildTab(1, 'Berhasil'),
-                  const SizedBox(width: 12),
-                  _buildTab(2, 'Gagal'),
+                  _buildTab('Semua'),
+                  const SizedBox(width: 8),
+                  _buildTab('PBB'),
+                  const SizedBox(width: 8),
+                  _buildTab('PBJT'),
+                  const SizedBox(width: 8),
+                  _buildTab('BPHTB'),
                 ],
               ),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             
             // List
             Expanded(
@@ -114,12 +168,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildTab(int index, String label) {
-    final isSelected = _selectedTab == index;
+  Widget _buildTab(String label) {
+    final isSelected = _selectedTab == label;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedTab = index;
+          _selectedTab = label;
         });
       },
       child: Container(
@@ -127,7 +181,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryDark : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          border: isSelected ? null : Border.all(color: AppColors.textHint),
+          border: isSelected ? null : Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
         ),
         child: Text(
           label,
