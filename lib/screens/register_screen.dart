@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/colors.dart';
+import '../utils/responsive.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -26,8 +27,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: AppColors.bgWhite,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+          padding: EdgeInsets.all(context.pagePadding),
+          child: context.constrainContent(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
@@ -53,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Text(
                 'Buat akun,\ntanpa ribet.',
                 style: GoogleFonts.lora(
-                  fontSize: 32,
+                  fontSize: context.sp(32),
                   fontWeight: FontWeight.w600,
                   fontStyle: FontStyle.italic,
                   color: AppColors.primaryDark,
@@ -202,6 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
             ],
+          ),
           ),
         ),
       ),

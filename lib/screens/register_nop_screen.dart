@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import '../utils/responsive.dart';
 
 class RegisterNopScreen extends StatefulWidget {
   const RegisterNopScreen({super.key});
@@ -83,7 +84,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+                padding: EdgeInsets.all(context.pagePadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -282,7 +283,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
             
             // Bottom Actions
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.pagePadding),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [

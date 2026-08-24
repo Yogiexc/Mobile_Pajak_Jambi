@@ -12,7 +12,10 @@ void main() async {
   await initializeDateFormatting('id_ID', null);
   runApp(
     DevicePreview(
-      enabled: !kReleaseMode,
+      enabled: kIsWeb && !kReleaseMode,
+      defaultDevice: Devices.ios.iPhone16Pro,
+      devices: Devices.ios.all,
+      storage: DevicePreviewStorage.none(),
       builder: (context) => MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => TaxProvider()),
@@ -32,7 +35,19 @@ class PajakJambiApp extends StatelessWidget {
       title: 'Pajak Jambi',
       debugShowCheckedModeBanner: false,
       locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
+      builder: (context, child) {
+        final previewed = DevicePreview.appBuilder(context, child);
+        final media = MediaQuery.of(context);
+        return MediaQuery(
+          data: media.copyWith(
+            textScaler: media.textScaler.clamp(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.2,
+            ),
+          ),
+          child: previewed,
+        );
+      },
       theme: AppTheme.lightTheme,
       routerConfig: AppRouter.router,
     );

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import '../utils/responsive.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -18,7 +19,10 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: AppColors.surface, // Clean white bg matching figma
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: EdgeInsets.symmetric(
+            horizontal: context.pagePadding,
+            vertical: context.isSmallPhone ? 12 : 20,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -26,7 +30,7 @@ class ProfileScreen extends StatelessWidget {
               Text(
                 'Profil',
                 style: GoogleFonts.lora(
-                  fontSize: 28,
+                  fontSize: context.sp(28),
                   fontWeight: FontWeight.w600,
                   fontStyle: FontStyle.italic,
                   color: AppColors.primaryDark,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../constants/colors.dart';
 import '../providers/tax_provider.dart';
+import '../utils/responsive.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -39,14 +40,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.pagePadding,
+                vertical: 20,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Riwayat',
                     style: GoogleFonts.lora(
-                      fontSize: 24,
+                      fontSize: context.sp(24),
                       fontWeight: FontWeight.w600,
                       fontStyle: FontStyle.italic,
                       color: AppColors.primaryDark,
@@ -59,8 +63,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
             
             // Tabs
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
+              padding: EdgeInsets.symmetric(horizontal: context.pagePadding),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
                 children: [
                   _buildTab(0, 'Semua'),
                   const SizedBox(width: 12),
@@ -68,6 +74,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(width: 12),
                   _buildTab(2, 'Gagal'),
                 ],
+                ),
               ),
             ),
             
@@ -83,7 +90,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: EdgeInsets.symmetric(horizontal: context.pagePadding),
                     itemCount: filteredHistory.length,
                     itemBuilder: (context, index) {
                       final item = filteredHistory[index];
