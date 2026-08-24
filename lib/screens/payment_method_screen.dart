@@ -12,7 +12,7 @@ class PaymentMethodScreen extends StatefulWidget {
 }
 
 class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
-  String _selectedMethod = 'Mandiri';
+  String? _selectedMethod;
   bool _isQris = false;
 
   @override
@@ -80,15 +80,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: _selectedMethod != null ? () {
                     context.push('/summary', extra: {
                       'billId': widget.billId,
                       'bankName': _selectedMethod,
                       'isQris': _isQris,
                     });
-                  },
+                  } : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryDark,
+                    backgroundColor: _selectedMethod != null ? AppColors.primaryDark : Colors.grey.withValues(alpha: 0.5),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

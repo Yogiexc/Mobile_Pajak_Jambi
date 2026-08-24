@@ -136,17 +136,17 @@ class DetailPajakScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    _buildRow('Tahun Pajak', '2024'),
+                    _buildRow('Pokok Pajak', currencyFormatter.format(bill.amount)),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(color: Color(0xFFF3F4F6), height: 1),
                     ),
-                    _buildRow('Denda', '0'),
+                    _buildRow('Denda', 'Rp 0'),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(color: Color(0xFFF3F4F6), height: 1),
                     ),
-                    _buildRow('Jatuh Tempo', DateFormat('dd MMMM yyyy', 'id_ID').format(bill.dueDate)),
+                    _buildRow('Total', currencyFormatter.format(bill.amount), isBold: true),
                   ],
                 ),
               ),
@@ -184,23 +184,23 @@ class DetailPajakScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(String label, String value) {
+  Widget _buildRow(String label, String value, {bool isBold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
+            fontSize: isBold ? 14 : 13,
+            fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+            color: isBold ? AppColors.primaryDark : AppColors.textSecondary,
           ),
         ),
         Text(
           value,
           style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontSize: isBold ? 14 : 13,
+            fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
             color: AppColors.primaryDark,
           ),
         ),

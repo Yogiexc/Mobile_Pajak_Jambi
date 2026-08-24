@@ -56,12 +56,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 
                 const SizedBox(height: 24),
                 
-                // Dark Card for pending bills (Swipeable if multiple)
+                // Pajak Saya (Pending Bills)
+                Text(
+                  'Pajak Saya',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
                 if (taxProvider.pendingBills.isNotEmpty)
                   Column(
                     children: [
                       SizedBox(
-                        height: 210, // Fixed height for the cards to allow swipe
+                        height: 230, // Fixed height for the cards to allow swipe
                         child: PageView.builder(
                           controller: _pageController,
                           onPageChanged: (index) {
@@ -118,15 +128,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 
-                // 3 Main Menu Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 16,
                   children: TaxConfigManager.mainMenus.map((config) {
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: _buildMainMenu(context, config),
-                      ),
+                    return SizedBox(
+                      width: (MediaQuery.of(context).size.width - 48 - 36) / 4, // 4 items per row
+                      child: _buildMainMenu(context, config),
                     );
                   }).toList(),
                 ),
@@ -356,47 +364,32 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         context.push('/check-tax/${config.title}');
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              offset: const Offset(0, 4),
-              blurRadius: 10,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: config.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(18),
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: config.color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(config.icon, color: config.color, size: 24),
+            child: Icon(config.icon, color: config.color, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            config.title.replaceAll('Pajak ', ''), // Shorten title for button
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryDark,
+              height: 1.2,
             ),
-            const SizedBox(height: 12),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                config.title.replaceAll('Pajak ', ''), // Shorten title for button
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-            ),
-          ],
-        ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
@@ -459,21 +452,49 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.dangerLight.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Belum Dibayar',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFFF8A8A), // Light red that looks good on dark bg
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Jatuh Tempo: ${DateFormat('dd MMM yyyy', 'id_ID').format(bill.dueDate)}',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
           const Spacer(),
           Text(
-            'Total Tagihan Anda',
+            'Total Tagihan',
             style: GoogleFonts.inter(
-              fontSize: 13,
+              fontSize: 12,
               color: Colors.white70,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               formatter.format(bill.amount),
               style: GoogleFonts.inter(
-                fontSize: 28,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),

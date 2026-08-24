@@ -106,11 +106,11 @@ class ProfileScreen extends StatelessWidget {
               _buildSection(
                 title: 'Akun',
                 items: [
-                  _buildMenuItem(Icons.person_outline, 'Edit Profil'),
+                  _buildMenuItem(Icons.person_outline, 'Edit Profil', onTap: () => context.push('/edit-profile')),
                   _buildMenuDivider(),
-                  _buildMenuItem(Icons.account_balance_outlined, 'Rekening Bank'),
+                  _buildMenuItem(Icons.account_balance_outlined, 'Rekening Bank', onTap: () => context.push('/linked-bank')),
                   _buildMenuDivider(),
-                  _buildMenuItem(Icons.credit_card_outlined, 'Kartu Tertaut'),
+                  _buildMenuItem(Icons.credit_card_outlined, 'Kartu Tertaut', onTap: () => context.push('/linked-card')),
                 ],
               ),
               const SizedBox(height: 24),
@@ -180,15 +180,20 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // General Section
               _buildSection(
                 title: 'General',
                 items: [
-                  _buildMenuItem(Icons.help_outline_rounded, 'Pusat Bantuan'),
+                  _buildMenuItem(
+                    Icons.help_outline_rounded,
+                    'Pusat Bantuan',
+                    onTap: () {
+                      context.push('/faq');
+                    },
+                  ),
                   _buildMenuDivider(),
-                  _buildMenuItem(Icons.privacy_tip_outlined, 'Kebijakan Privasi'),
+                  _buildMenuItem(Icons.privacy_tip_outlined, 'Kebijakan Privasi', onTap: () => context.push('/privacy-policy')),
                   _buildMenuDivider(),
-                  _buildMenuItem(Icons.description_outlined, 'Ketentuan Layanan'),
+                  _buildMenuItem(Icons.description_outlined, 'Ketentuan Layanan', onTap: () => context.push('/terms')),
                   _buildMenuDivider(),
                   _buildMenuItem(
                     Icons.logout_rounded,

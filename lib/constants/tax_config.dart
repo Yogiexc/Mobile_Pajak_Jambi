@@ -45,17 +45,31 @@ class TaxConfigManager {
     ),
     MainMenuConfig(
       title: 'BPHTB',
-      inputLabel: 'ID Transaksi / NOP',
+      inputLabel: 'ID Transaksi',
       hintText: 'Contoh: TR-2026-00123',
       icon: Icons.receipt_long,
       color: Colors.purple,
     ),
     MainMenuConfig(
-      title: 'Pajak Lainnya',
-      inputLabel: 'NPWPD (Otomatis Deteksi Usaha)',
+      title: 'PBJT',
+      inputLabel: 'NPWPD',
       hintText: 'Contoh: P.001234567890',
       icon: Icons.storefront,
       color: Colors.orange,
+    ),
+    MainMenuConfig(
+      title: 'Pajak Reklame',
+      inputLabel: 'Identifier Sistem',
+      hintText: 'Belum dikonfirmasi',
+      icon: Icons.campaign,
+      color: Colors.red,
+    ),
+    MainMenuConfig(
+      title: 'Pajak Air Tanah',
+      inputLabel: 'Identifier Sistem',
+      hintText: 'Belum dikonfirmasi',
+      icon: Icons.water_drop,
+      color: Colors.lightBlue,
     ),
   ];
 

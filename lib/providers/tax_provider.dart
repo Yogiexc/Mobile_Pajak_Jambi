@@ -86,6 +86,13 @@ class TaxProvider extends ChangeNotifier {
     ),
   ];
 
+  String? _npwpd;
+  final List<String> _nops = [];
+
+  String? get npwpd => _npwpd;
+  List<String> get nops => _nops;
+  bool get hasNpwpd => _npwpd != null;
+
   List<TaxBill> get pendingBills => _pendingBills;
   List<TaxTransaction> get history => _history;
 
@@ -96,45 +103,57 @@ class TaxProvider extends ChangeNotifier {
       .where((t) => t.isSuccess)
       .fold(0, (sum, t) => sum + t.amount);
 
-  void addBill(String taxId, String serviceName) {
-    if (serviceName == 'Pajak Lainnya') {
-      // Simulate NPWPD detection spawning multiple bills
-      final now = DateTime.now();
-      _pendingBills.addAll([
-        TaxBill(
-          id: '${now.millisecondsSinceEpoch}_1',
-          title: 'PBJT Hotel',
-          taxId: taxId,
-          amount: 2500000,
-          dueDate: now.add(const Duration(days: 14)),
-        ),
-        TaxBill(
-          id: '${now.millisecondsSinceEpoch}_2',
-          title: 'PBJT Restoran/Kafe',
-          taxId: taxId,
-          amount: 450000,
-          dueDate: now.add(const Duration(days: 14)),
-        ),
-        TaxBill(
-          id: '${now.millisecondsSinceEpoch}_3',
-          title: 'PBJT Parkir',
-          taxId: taxId,
-          amount: 120000,
-          dueDate: now.add(const Duration(days: 14)),
-        ),
-      ]);
-    } else {
-      // PBB or BPHTB
+  void addNpwpd(String npwpd) {
+    if (_npwpd != null) return;
+    _npwpd = npwpd;
+    // Simulate finding active bills for this NPWPD
+    final now = DateTime.now();
+    _pendingBills.addAll([
+      TaxBill(
+        id: '${now.millisecondsSinceEpoch}_1',
+        title: 'PBJT Makanan & Minuman',
+        taxId: npwpd,
+        amount: 450000,
+        dueDate: now.add(const Duration(days: 14)),
+      ),
+      TaxBill(
+        id: '${now.millisecondsSinceEpoch}_2',
+        title: 'PBJT Perhotelan',
+        taxId: npwpd,
+        amount: 2500000,
+        dueDate: now.add(const Duration(days: 14)),
+      ),
+    ]);
+    notifyListeners();
+  }
+
+  void addNop(String nop) {
+    if (!_nops.contains(nop)) {
+      _nops.add(nop);
       _pendingBills.add(
         TaxBill(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          title: serviceName,
-          taxId: taxId,
-          amount: 250000,
+          title: 'Pajak PBB',
+          taxId: nop,
+          amount: 325000,
           dueDate: DateTime.now().add(const Duration(days: 30)),
         ),
       );
+      notifyListeners();
     }
+  }
+
+  // Generic method for transaction IDs (BPHTB)
+  void addBill(String taxId, String serviceName) {
+    _pendingBills.add(
+      TaxBill(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: serviceName,
+        taxId: taxId,
+        amount: 250000,
+        dueDate: DateTime.now().add(const Duration(days: 30)),
+      ),
+    );
     notifyListeners();
   }
 
