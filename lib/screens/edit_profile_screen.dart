@@ -1,13 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../constants/colors.dart';
+import '../providers/tax_provider.dart';
 
-class EditProfileScreen extends StatelessWidget {
+class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+
+  @override
+  void initState() {
+    super.initState();
+    final taxProvider = context.read<TaxProvider>();
+    _nameController = TextEditingController(text: taxProvider.userName ?? 'Dexa Wahnugrah');
+    _emailController = TextEditingController(text: taxProvider.userEmail ?? 'dexa@example.com');
+    _phoneController = TextEditingController(text: taxProvider.userPhone ?? '+62 812-3456-7890');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final taxProvider = context.watch<TaxProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -69,18 +99,23 @@ class EditProfileScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 32),
-              _buildTextField('Nama Lengkap', 'Dexa Wahnugrah'),
+              _buildTextField('Nama Lengkap', _nameController),
               const SizedBox(height: 16),
-              _buildTextField('Email', 'dexa@example.com'),
+              _buildTextField('Email', _emailController),
               const SizedBox(height: 16),
-              _buildTextField('Nomor Handphone', '+62 812-3456-7890'),
+              _buildTextField('Nomor Handphone', _phoneController),
               const SizedBox(height: 16),
-              _buildTextField('NIK', '1571xxxxxxxxxxxx', isEnabled: false),
+              _buildTextField('NIK', TextEditingController(text: taxProvider.userNik), isEnabled: false),
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    taxProvider.updateProfile(
+                      _nameController.text,
+                      _emailController.text,
+                      _phoneController.text,
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Profil berhasil diperbarui')),
                     );
@@ -110,7 +145,7 @@ class EditProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(String label, String value, {bool isEnabled = true}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isEnabled = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -124,7 +159,7 @@ class EditProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextFormField(
-          initialValue: value,
+          controller: controller,
           enabled: isEnabled,
           style: GoogleFonts.inter(
             fontSize: 14,
