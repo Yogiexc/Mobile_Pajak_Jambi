@@ -12,7 +12,7 @@ void main() async {
   await initializeDateFormatting('id_ID', null);
   runApp(
     DevicePreview(
-      enabled: !kReleaseMode,
+      enabled: kIsWeb && !kReleaseMode,
       builder: (context) => MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => TaxProvider()),
@@ -33,7 +33,15 @@ class PajakJambiApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.lightTheme.copyWith(
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          },
+        ),
+      ),
       routerConfig: AppRouter.router,
     );
   }

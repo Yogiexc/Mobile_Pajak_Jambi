@@ -81,23 +81,32 @@ class MainShell extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 8),
-          Icon(
-            icon,
-            color: isSelected ? AppColors.primaryDark : AppColors.textHint,
-            size: 24,
+          AnimatedScale(
+            scale: isSelected ? 1 : 0.92,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            child: Icon(
+              icon,
+              color: isSelected ? AppColors.primaryDark : AppColors.textHint,
+              size: 24,
+            ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected ? AppColors.primaryDark : AppColors.textHint,
             ),
+            child: Text(label),
           ),
           const SizedBox(height: 6),
-          Container(
-            width: 24,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            width: isSelected ? 24 : 0,
             height: 3,
             decoration: BoxDecoration(
               color: isSelected ? AppColors.yellowDark : Colors.transparent,

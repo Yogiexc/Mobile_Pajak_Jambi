@@ -7,7 +7,7 @@ import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
 
-class DetailPajakScreen extends StatelessWidget {
+class DetailPajakScreen extends StatelessWidget {  
   final String? billId;
   
   const DetailPajakScreen({super.key, this.billId});

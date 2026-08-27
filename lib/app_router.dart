@@ -24,6 +24,7 @@ import 'screens/privacy_policy_screen.dart';
 import 'screens/terms_screen.dart';
 import 'screens/other_taxes_screen.dart';
 import 'screens/pbb_list_screen.dart';
+import 'utils/page_transitions.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -35,19 +36,23 @@ class AppRouter {
     routes: [
       GoRoute(
         path: '/',
-        builder: (context, state) => const SplashScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.fade(state, const SplashScreen()),
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.fadeUp(state, const LoginScreen()),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.fadeUp(state, const RegisterScreen()),
       ),
       GoRoute(
         path: '/register-nop',
-        builder: (context, state) => const RegisterNopScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.slide(state, const RegisterNopScreen()),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
@@ -55,117 +60,125 @@ class AppRouter {
         routes: [
           GoRoute(
             path: '/home',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: HomeScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                AppPage.fade(state, const HomeScreen()),
           ),
           GoRoute(
             path: '/history',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: HistoryScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                AppPage.fade(state, const HistoryScreen()),
           ),
           GoRoute(
             path: '/profile',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ProfileScreen(),
-            ),
+            pageBuilder: (context, state) =>
+                AppPage.fade(state, const ProfileScreen()),
           ),
         ],
       ),
       GoRoute(
         path: '/detail',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final billId = state.extra as String?;
-          return DetailPajakScreen(billId: billId);
+          return AppPage.slide(state, DetailPajakScreen(billId: billId));
         },
       ),
       GoRoute(
         path: '/payment',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final billId = state.extra as String?;
-          return PaymentMethodScreen(billId: billId);
+          return AppPage.slide(state, PaymentMethodScreen(billId: billId));
         },
       ),
       GoRoute(
         path: '/summary',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final args = state.extra as Map<String, dynamic>?;
-          return SummaryScreen(
-            billId: args?['billId'] as String?,
-            bankName: args?['bankName'] as String? ?? 'Mandiri',
-            isQris: args?['isQris'] as bool? ?? false,
+          return AppPage.slide(
+            state,
+            SummaryScreen(
+              billId: args?['billId'] as String?,
+              bankName: args?['bankName'] as String? ?? 'Mandiri',
+              isQris: args?['isQris'] as bool? ?? false,
+            ),
           );
         },
       ),
       GoRoute(
         path: '/success',
-        builder: (context, state) => const PaymentSuccessScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.scaleFade(state, const PaymentSuccessScreen()),
       ),
       GoRoute(
         path: '/receipt',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final transactionId = state.extra as String? ?? '';
-          return ReceiptScreen(transactionId: transactionId);
+          return AppPage.slide(state, ReceiptScreen(transactionId: transactionId));
         },
       ),
       GoRoute(
         path: '/check-tax/:serviceName',
-        builder: (context, state) {
-          final encodedServiceName = state.pathParameters['serviceName'] ?? 'Pajak';
+        pageBuilder: (context, state) {
+          final encodedServiceName =
+              state.pathParameters['serviceName'] ?? 'Pajak';
           final serviceName = Uri.decodeComponent(encodedServiceName);
-          return CheckTaxScreen(serviceName: serviceName);
+          return AppPage.slide(state, CheckTaxScreen(serviceName: serviceName));
         },
       ),
       GoRoute(
         path: '/select-pbjt',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final npwpd = state.extra as String? ?? '';
-          return SelectPbjtScreen(npwpd: npwpd);
+          return AppPage.slide(state, SelectPbjtScreen(npwpd: npwpd));
         },
       ),
       GoRoute(
         path: '/pin',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final args = state.extra as Map<String, dynamic>? ?? {};
-          return PinScreen(paymentArgs: args);
+          return AppPage.fadeUp(state, PinScreen(paymentArgs: args));
         },
       ),
       GoRoute(
         path: '/processing',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final args = state.extra as Map<String, dynamic>? ?? {};
-          return ProcessingScreen(paymentArgs: args);
+          return AppPage.fade(state, ProcessingScreen(paymentArgs: args));
         },
       ),
       GoRoute(
         path: '/faq',
-        builder: (context, state) => const FaqScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.slide(state, const FaqScreen()),
       ),
       GoRoute(
         path: '/edit-profile',
-        builder: (context, state) => const EditProfileScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.slide(state, const EditProfileScreen()),
       ),
       GoRoute(
         path: '/linked-bank',
-        builder: (context, state) => const LinkedBankScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.slide(state, const LinkedBankScreen()),
       ),
-
       GoRoute(
         path: '/pbb-list',
-        builder: (context, state) => const PbbListScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.slide(state, const PbbListScreen()),
       ),
       GoRoute(
         path: '/other-taxes',
-        builder: (context, state) => const OtherTaxesScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.slide(state, const OtherTaxesScreen()),
       ),
       GoRoute(
         path: '/privacy-policy',
-        builder: (context, state) => const PrivacyPolicyScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.slide(state, const PrivacyPolicyScreen()),
       ),
       GoRoute(
         path: '/terms',
-        builder: (context, state) => const TermsScreen(),
+        pageBuilder: (context, state) =>
+            AppPage.slide(state, const TermsScreen()),
       ),
     ],
   );
