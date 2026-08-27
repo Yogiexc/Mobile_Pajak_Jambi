@@ -48,6 +48,14 @@ class TaxTransaction {
   });
 }
 
+class LinkedBank {
+  final String name;
+  final String number;
+  final bool isPrimary;
+
+  LinkedBank({required this.name, required this.number, required this.isPrimary});
+}
+
 class TaxProvider extends ChangeNotifier {
   // Pending bills to show on Home
   final List<TaxBill> _pendingBills = [];
@@ -64,6 +72,14 @@ class TaxProvider extends ChangeNotifier {
   String? userPhone;
   String? userPassword;
   String? userPin;
+  String? userNik = '1571xxxxxxxxxxxx'; // Dummy NIK
+
+  // Linked Banks Data
+  final List<LinkedBank> _linkedBanks = [
+    LinkedBank(name: 'Mandiri', number: '**** **** **** 4921', isPrimary: true),
+    LinkedBank(name: 'BCA', number: '**** **** **** 1837', isPrimary: false),
+  ];
+  List<LinkedBank> get linkedBanks => _linkedBanks;
 
   TaxProvider() {
     _initializeDummyData();
@@ -104,6 +120,28 @@ class TaxProvider extends ChangeNotifier {
     bool passwordMatches = userPassword == password;
     
     return identifierMatches && passwordMatches;
+  }
+
+  void updateProfile(String name, String email, String phone) {
+    userName = name;
+    userEmail = email;
+    userPhone = phone;
+    notifyListeners();
+  }
+
+  void addLinkedBank(String name, String number, bool isPrimary) {
+    if (isPrimary) {
+      // If adding a new primary bank, make others non-primary
+      for (int i = 0; i < _linkedBanks.length; i++) {
+        _linkedBanks[i] = LinkedBank(
+          name: _linkedBanks[i].name, 
+          number: _linkedBanks[i].number, 
+          isPrimary: false
+        );
+      }
+    }
+    _linkedBanks.add(LinkedBank(name: name, number: number, isPrimary: isPrimary));
+    notifyListeners();
   }
 
   void addNpwpd(String npwpd) {
