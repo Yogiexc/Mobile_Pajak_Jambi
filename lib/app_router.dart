@@ -14,6 +14,7 @@ import 'screens/summary_screen.dart';
 import 'screens/payment_success_screen.dart';
 import 'screens/check_tax_screen.dart';
 import 'screens/select_pbjt_screen.dart';
+import 'screens/receipt_screen.dart';
 import 'screens/pin_screen.dart';
 import 'screens/processing_screen.dart';
 import 'screens/faq_screen.dart';
@@ -100,6 +101,13 @@ class AppRouter {
       GoRoute(
         path: '/success',
         builder: (context, state) => const PaymentSuccessScreen(),
+      ),
+      GoRoute(
+        path: '/receipt',
+        builder: (context, state) {
+          final transactionId = state.extra as String? ?? '';
+          return ReceiptScreen(transactionId: transactionId);
+        },
       ),
       GoRoute(
         path: '/check-tax/:serviceName',
