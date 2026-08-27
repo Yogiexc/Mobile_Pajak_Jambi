@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'colors.dart';
 
 class MainMenuConfig {
   final String title;
@@ -48,22 +49,22 @@ class TaxConfigManager {
       inputLabel: 'ID Transaksi',
       hintText: 'Contoh: TR-2026-00123',
       icon: Icons.receipt_long,
-      color: Colors.purple,
+      color: AppColors.primaryDark,
     ),
     MainMenuConfig(
       title: 'Pajak Lainnya',
       inputLabel: 'NPWPD',
       hintText: 'Contoh: P.001234567890',
       icon: Icons.storefront,
-      color: Colors.orange,
+      color: AppColors.yellowDark,
     ),
   ];
 
   // Detailed configs used when displaying the actual bills (Card & Profile)
   static const List<TaxConfig> detailConfigs = [
     TaxConfig(title: 'Pajak PBB', inputLabel: 'NOP', icon: Icons.home_work, color: Colors.blue),
-    TaxConfig(title: 'BPHTB', inputLabel: 'ID Transaksi', icon: Icons.receipt_long, color: Colors.purple),
-    TaxConfig(title: 'PBJT Hotel', inputLabel: 'NPWPD', icon: Icons.hotel, color: Colors.indigo),
+    TaxConfig(title: 'BPHTB', inputLabel: 'ID Transaksi', icon: Icons.receipt_long, color: AppColors.primaryDark),
+    TaxConfig(title: 'PBJT Hotel', inputLabel: 'NPWPD', icon: Icons.hotel, color: AppColors.yellowDark),
     TaxConfig(title: 'PBJT Makanan & Minuman', inputLabel: 'NPWPD', icon: Icons.restaurant, color: Colors.orange),
     TaxConfig(title: 'PBJT Parkir', inputLabel: 'NPWPD', icon: Icons.local_parking, color: Colors.teal),
     TaxConfig(title: 'PBJT Hiburan', inputLabel: 'NPWPD', icon: Icons.music_note, color: Colors.pinkAccent),
