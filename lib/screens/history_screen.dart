@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../constants/colors.dart';
+import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -13,16 +15,6 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  String _selectedTab = 'Semua';
-  final _searchController = TextEditingController();
-  String _searchQuery = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final taxProvider = context.watch<TaxProvider>();
@@ -34,162 +26,219 @@ class _HistoryScreenState extends State<HistoryScreen> {
     
     // Filter history based on tab and search
     List<TaxTransaction> filteredHistory = taxProvider.history;
-    
-    if (_selectedTab != 'Semua') {
-      filteredHistory = filteredHistory.where((t) {
-        if (_selectedTab == 'PBB') return t.title.contains('PBB');
-        if (_selectedTab == 'BPHTB') return t.title.contains('BPHTB');
-        if (_selectedTab == 'PBJT') return t.title.contains('PBJT');
-        return true;
-      }).toList();
-    }
-
-    if (_searchQuery.isNotEmpty) {
-      filteredHistory = filteredHistory.where((t) => 
-        t.taxId.toLowerCase().contains(_searchQuery.toLowerCase())
-      ).toList();
-    }
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      body: SafeArea(
-        child: Column(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Color(0xFFC4E0F4), // Light blue to match Home
+        ),
+        child: Stack(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Positioned(
+              top: 40,
+              right: -20,
+              child: Image.asset(
+                'assets/images/illustration.png',
+                height: 180,
+                fit: BoxFit.contain,
+              ),
+            ),
+            SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Riwayat',
-                    style: GoogleFonts.lora(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.primaryDark,
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            if (Navigator.of(context).canPop())
+                              GestureDetector(
+                                onTap: () => context.pop(),
+                                child: const Padding(
+                                  padding: EdgeInsets.only(right: 16),
+                                  child: Icon(Icons.arrow_back, color: AppColors.primaryDark),
+                                ),
+                              ),
+                            Text(
+                              'Riwayat Pembayaran',
+                              style: GoogleFonts.lora(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.filter_alt_outlined, color: AppColors.primaryDark, size: 20),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Cari NOP / NPWPD...',
-                  hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
-                  prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
-                  filled: true,
-                  fillColor: AppColors.bgWhite,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primaryDark),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Tabs
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  _buildTab('Semua'),
-                  const SizedBox(width: 8),
-                  _buildTab('PBB'),
-                  const SizedBox(width: 8),
-                  _buildTab('PBJT'),
-                  const SizedBox(width: 8),
-                  _buildTab('BPHTB'),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // List
-            Expanded(
-              child: filteredHistory.isEmpty 
-                ? Center(
-                    child: Text(
-                      'Tidak ada riwayat',
-                      style: GoogleFonts.inter(color: AppColors.textSecondary),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: filteredHistory.length,
-                    itemBuilder: (context, index) {
-                      final item = filteredHistory[index];
-                      // Grouping logically would require grouping the list by month.
-                      // For simplicity, we just list them out.
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  
+                  // Content
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: AppColors.bgWhite,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(24),
+                          topRight: Radius.circular(24),
+                        ),
+                      ),
+                      child: Column(
                         children: [
-                          if (index == 0 || filteredHistory[index].date.month != filteredHistory[index-1].date.month)
-                            _buildMonthGroup(DateFormat('MMMM yyyy', 'id_ID').format(item.date).toUpperCase()),
-                          _buildHistoryItem(
-                            isQris: item.isQris,
-                            bankName: item.bankName,
-                            taxId: item.taxId,
-                            date: DateFormat('dd MMM').format(item.date),
-                            type: item.title,
-                            amount: currencyFormatter.format(item.amount),
-                            isSuccess: item.isSuccess,
+                          // Filters
+                          Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Jenis Pajak', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('Semua Pajak', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primaryDark)),
+                                            const Icon(Icons.keyboard_arrow_down, color: AppColors.textHint, size: 18),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Periode', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Icon(Icons.calendar_today_outlined, color: AppColors.textHint, size: 14),
+                                            const SizedBox(width: 6),
+                                            Expanded(child: Text('01 Jun - 30 Jun', style: GoogleFonts.inter(fontSize: 13, color: AppColors.primaryDark), overflow: TextOverflow.ellipsis)),
+                                            const Icon(Icons.keyboard_arrow_down, color: AppColors.textHint, size: 18),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Expanded(
+                            child: filteredHistory.isEmpty 
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.history_outlined, size: 64, color: AppColors.textHint),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Belum Ada Riwayat',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Pembayaran yang berhasil\nakan muncul di sini.',
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  itemCount: filteredHistory.length + 1, // +1 for the info footer
+                                  itemBuilder: (context, index) {
+                                    if (index == filteredHistory.length) {
+                                      return Container(
+                                        margin: const EdgeInsets.only(top: 16, bottom: 32),
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.bgBlueLight,
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.info_outline, color: AppColors.primaryBlue, size: 20),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                'Menampilkan riwayat pembayaran\n30 hari terakhir.',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  color: AppColors.primaryBlue,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+
+                                    final item = filteredHistory[index];
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (index == 0 || filteredHistory[index].date.month != filteredHistory[index-1].date.month)
+                                          _buildMonthGroup(DateFormat('MMMM yyyy', 'id_ID').format(item.date)),
+                                        _buildHistoryItem(
+                                          item: item,
+                                          formatter: currencyFormatter,
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
                           ),
                         ],
-                      );
-                    },
+                      ),
+                    ),
                   ),
+                ],
+              ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTab(String label) {
-    final isSelected = _selectedTab == label;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTab = label;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryDark : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: isSelected ? null : Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
-          ),
         ),
       ),
     );
@@ -211,50 +260,55 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildHistoryItem({
-    required bool isQris,
-    required String bankName,
-    required String taxId,
-    required String date,
-    required String type,
-    required String amount,
-    required bool isSuccess,
+    required TaxTransaction item,
+    required NumberFormat formatter,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+    final config = TaxConfigManager.getDetailConfig(item.title);
+
+    return GestureDetector(
+      onTap: () => context.push('/receipt', extra: item.id),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppColors.bgWhite,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+              color: config.color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            child: Center(
-              child: Icon(
-                isQris ? Icons.qr_code_2 : Icons.account_balance,
-                color: isQris ? AppColors.primaryDark : AppColors.primaryBlue,
-                size: 20,
-              ),
-            ),
+            child: Icon(config.icon, color: config.color, size: 22),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  taxId,
+                  item.title,
                   style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.primaryDark,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$date • $type - $bankName',
+                  '${item.taxId} - ${item.bankName}', // Adjust text logic based on real data
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: AppColors.textSecondary,
@@ -262,39 +316,48 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  DateFormat('dd MMM yyyy • HH:mm', 'id_ID').format(item.date),
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                amount,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-              const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (isSuccess ? AppColors.successLight : AppColors.dangerLight).withValues(alpha: 0.5),
+                  color: (item.isSuccess ? AppColors.successLight : AppColors.dangerLight).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  isSuccess ? 'Berhasil' : 'Gagal',
+                  item.isSuccess ? 'Berhasil' : 'Gagal',
                   style: GoogleFonts.inter(
                     fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: isSuccess ? AppColors.success : AppColors.danger,
+                    fontWeight: FontWeight.w700,
+                    color: item.isSuccess ? AppColors.success : AppColors.danger,
                   ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                formatter.format(item.amount),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryDark,
                 ),
               ),
             ],
           ),
         ],
+      ),
       ),
     );
   }
