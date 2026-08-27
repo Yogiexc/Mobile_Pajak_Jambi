@@ -12,7 +12,7 @@ void main() async {
   await initializeDateFormatting('id_ID', null);
   runApp(
     DevicePreview(
-      enabled: kIsWeb && !kReleaseMode,
+      enabled: !kReleaseMode,
       builder: (context) => MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => TaxProvider()),
