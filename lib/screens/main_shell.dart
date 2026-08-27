@@ -77,34 +77,34 @@ class MainShell extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textLight,
-              size: 24,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          Icon(
+            icon,
+            color: isSelected ? AppColors.primaryDark : AppColors.textHint,
+            size: 24,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? AppColors.primaryDark : AppColors.textHint,
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? AppColors.primary : AppColors.textLight,
-              ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: 24,
+            height: 3,
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.yellowDark : Colors.transparent,
+              borderRadius: BorderRadius.circular(1.5),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
