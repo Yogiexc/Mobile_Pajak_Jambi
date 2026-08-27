@@ -28,9 +28,8 @@ class OtherTaxesScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
@@ -38,16 +37,24 @@ class OtherTaxesScreen extends StatelessWidget {
         ),
         title: Text(
           'Pajak Lainnya',
-          style: GoogleFonts.inter(
-            fontSize: 16,
+          style: GoogleFonts.lora(
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            fontStyle: FontStyle.italic,
             color: AppColors.primaryDark,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Column(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SafeArea(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
@@ -111,11 +118,15 @@ class OtherTaxesScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isClickable ? Colors.white : Colors.grey.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isClickable ? AppColors.primaryBlue.withValues(alpha: 0.3) : Colors.transparent,
-                        ),
+                        color: isClickable ? Colors.white : Colors.grey.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: isClickable ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ] : null,
                       ),
                       child: Row(
                         children: [
@@ -163,6 +174,7 @@ class OtherTaxesScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
