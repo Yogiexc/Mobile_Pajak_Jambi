@@ -9,7 +9,7 @@ class PaymentSuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.bgWhite,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -21,55 +21,59 @@ class PaymentSuccessScreen extends StatelessWidget {
               
               // Success Icon
               Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.success,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.success.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 40),
-              ),
-              const SizedBox(height: 32),
+                 width: 64,
+                 height: 64,
+                 decoration: BoxDecoration(
+                   color: AppColors.success,
+                   shape: BoxShape.circle,
+                   boxShadow: [
+                     BoxShadow(
+                       color: AppColors.success.withValues(alpha: 0.3),
+                       blurRadius: 16,
+                       offset: const Offset(0, 8),
+                     ),
+                   ],
+                 ),
+                 child: const Icon(Icons.check, color: Colors.white, size: 32),
+               ),
+               const SizedBox(height: 24),
               
-              // Text
               Text(
-                'Pembayaran\nberhasil.',
-                textAlign: TextAlign.center,
+                'Pembayaran Berhasil',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.success,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Rp91.800',
                 style: GoogleFonts.lora(
                   fontSize: 32,
-                  fontWeight: FontWeight.w600,
-                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.primaryDark,
-                  height: 1.1,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               Text(
-                'Tagihan PBB untuk Tahun 2024 sudah lunas.',
+                'Pajak Parkir\nMasa Juni 2026',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                  fontSize: 13,
+                  fontSize: 14,
                   color: AppColors.textSecondary,
+                  height: 1.5,
                 ),
               ),
               
-              const SizedBox(height: 40),
+              const SizedBox(height: 48),
               
               // Details
-              _buildDetailRow('Total Dibayar', 'Rp 1.450.000'),
-              const SizedBox(height: 16),
-              _buildDetailRow('Metode', 'Mandiri **** 4921'),
-              const SizedBox(height: 16),
-              _buildDetailRow('Tanggal & Waktu', '21 Jun, 09:41'),
-              const SizedBox(height: 16),
-              _buildDetailRow('ID Transaksi', 'TRX-88231021'),
+              _buildDetailColumn('Tanggal', '24 Agustus 2026 • 14:07'),
+              const SizedBox(height: 24),
+              _buildDetailColumn('ID Transaksi', 'TX-20260824-000123'),
+              const SizedBox(height: 24),
+              _buildDetailColumn('Metode Pembayaran', 'BCA Virtual Account'),
               
               const Spacer(),
               
@@ -79,7 +83,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to history or receipt
+                    // Navigate to history or receipt (we will build receipt screen next if needed)
                     context.go('/history');
                   },
                   style: ElevatedButton.styleFrom(
@@ -117,22 +121,22 @@ class PaymentSuccessScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildDetailColumn(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontSize: 12,
             color: AppColors.textSecondary,
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           value,
           style: GoogleFonts.inter(
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.primaryDark,
           ),

@@ -21,25 +21,32 @@ class PbbListScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Daftar Objek PBB Anda',
-          style: GoogleFonts.inter(
-            fontSize: 16,
+          'Daftar PBB Anda',
+          style: GoogleFonts.lora(
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            fontStyle: FontStyle.italic,
             color: AppColors.primaryDark,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SafeArea(
         child: nops.isEmpty
             ? _buildEmptyState(context)
             : Column(
@@ -99,21 +106,20 @@ class PbbListScreen extends StatelessWidget {
                         return InkWell(
                           onTap: hasTagihan ? () {
                             context.push('/detail', extra: pendingBill.id);
-                          } : null,
+                          } : (lunas ? () {
+                            context.push('/receipt', extra: historyTx.id);
+                          } : null),
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: hasTagihan ? AppColors.primaryBlue.withValues(alpha: 0.3) : AppColors.textHint.withValues(alpha: 0.2),
-                              ),
+                              borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
                                 ),
                               ],
                             ),
@@ -234,6 +240,7 @@ class PbbListScreen extends StatelessWidget {
                   ),
                 ],
               ),
+        ),
       ),
       floatingActionButton: nops.isNotEmpty 
           ? FloatingActionButton.extended(
@@ -292,10 +299,11 @@ class PbbListScreen extends StatelessWidget {
                   context.push('/check-tax/$encodedTitle');
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
+                  backgroundColor: AppColors.primaryBlue,
                   foregroundColor: Colors.white,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 child: Text(

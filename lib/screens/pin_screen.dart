@@ -61,16 +61,22 @@ class _PinScreenState extends State<PinScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgWhite,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppColors.bgWhite,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
           onPressed: () => context.pop(),
         ),
       ),
-      body: SafeArea(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 32),
@@ -134,6 +140,7 @@ class _PinScreenState extends State<PinScreen> {
             const SizedBox(height: 32),
           ],
         ),
+      ),
       ),
     );
   }
