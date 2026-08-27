@@ -69,26 +69,33 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Cek Tagihan ${_config.title}',
-          style: GoogleFonts.inter(
-            fontSize: 16,
+          'Cek ${_config.title}',
+          style: GoogleFonts.lora(
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            fontStyle: FontStyle.italic,
             color: AppColors.primaryDark,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SafeArea(
+          child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,6 +158,7 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
