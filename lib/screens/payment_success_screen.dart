@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../constants/colors.dart';
+import '../providers/tax_provider.dart';
 
 class PaymentSuccessScreen extends StatelessWidget {
   const PaymentSuccessScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final tx = context.watch<TaxProvider>().lastTransaction;
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    final dateFormat = DateFormat('dd MMMM yyyy • HH:mm', 'id_ID');
+
     return Scaffold(
       backgroundColor: AppColors.bgWhite,
       body: SafeArea(
@@ -18,8 +29,6 @@ class PaymentSuccessScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(),
-              
-              // Success Icon
               Container(
                  width: 64,
                  height: 64,
@@ -37,7 +46,6 @@ class PaymentSuccessScreen extends StatelessWidget {
                  child: const Icon(Icons.check, color: Colors.white, size: 32),
                ),
                const SizedBox(height: 24),
-              
               Text(
                 'Pembayaran Berhasil',
                 style: GoogleFonts.inter(
@@ -48,7 +56,7 @@ class PaymentSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Rp91.800',
+                currencyFormatter.format(tx?.amount ?? 0),
                 style: GoogleFonts.lora(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
@@ -57,7 +65,7 @@ class PaymentSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Pajak Parkir\nMasa Juni 2026',
+                tx?.title ?? 'Pajak Daerah',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 14,
@@ -65,26 +73,27 @@ class PaymentSuccessScreen extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
-              
               const SizedBox(height: 48),
-              
-              // Details
-              _buildDetailColumn('Tanggal', '24 Agustus 2026 • 14:07'),
+              _buildDetailColumn(
+                'Tanggal',
+                tx == null ? '-' : dateFormat.format(tx.date),
+              ),
               const SizedBox(height: 24),
-              _buildDetailColumn('ID Transaksi', 'TX-20260824-000123'),
+              _buildDetailColumn(
+                'ID Transaksi',
+                tx?.transactionRef.isNotEmpty == true
+                    ? tx!.transactionRef
+                    : (tx?.id ?? '-'),
+              ),
               const SizedBox(height: 24),
-              _buildDetailColumn('Metode Pembayaran', 'BCA Virtual Account'),
-              
+              _buildDetailColumn('Metode Pembayaran', tx?.bankName ?? '-'),
               const Spacer(),
-              
-              // Button
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to history or receipt (we will build receipt screen next if needed)
-                    context.go('/history');
+                    context.go('/receipt', extra: tx?.id ?? '');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryDark,

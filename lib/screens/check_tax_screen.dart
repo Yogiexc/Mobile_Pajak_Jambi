@@ -26,43 +26,48 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
     _config = TaxConfigManager.getDetailConfig(widget.serviceName);
   }
 
-  void _checkTax() {
-    if (_taxIdController.text.isNotEmpty) {
+  Future<void> _checkTax() async {
+    if (_taxIdController.text.isEmpty) return;
+
+    try {
+      final provider = context.read<TaxProvider>();
       if (widget.serviceName == 'Pajak Lainnya') {
-        context.read<TaxProvider>().addNpwpd(_taxIdController.text);
+        await provider.addNpwpd(_taxIdController.text);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('NPWPD berhasil didaftarkan!'),
             backgroundColor: AppColors.success,
           ),
         );
         context.pushReplacement('/other-taxes');
       } else if (widget.serviceName == 'Pajak PBB') {
-        context.read<TaxProvider>().addNop(_taxIdController.text);
+        await provider.addNop(_taxIdController.text);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('NOP berhasil didaftarkan!'),
             backgroundColor: AppColors.success,
           ),
         );
-        context.pop(); // Go back to PBB List
+        context.pop();
       } else {
-        // For BPHTB and specific PBJT types
-        context.read<TaxProvider>().addBill(_taxIdController.text, widget.serviceName);
-        
-        // Get the newly added bill's ID
+        await provider.addBill(_taxIdController.text, widget.serviceName);
+        if (!mounted) return;
         final newBill = context.read<TaxProvider>().pendingBills.last;
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Pencarian berhasil. Tagihan ditemukan!'),
             backgroundColor: AppColors.success,
           ),
         );
-        
-        // Go straight to detail page instead of home
         context.pushReplacement('/detail', extra: newBill.id);
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
     }
   }
 

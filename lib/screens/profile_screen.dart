@@ -189,7 +189,10 @@ class ProfileScreen extends StatelessWidget {
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(
-                                onPressed: () => context.go('/login'),
+                                onPressed: () async {
+                                  await context.read<TaxProvider>().logout();
+                                  if (context.mounted) context.go('/login');
+                                },
                                 icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
                                 label: Text(
                                   'Logout',

@@ -13,41 +13,40 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _nikController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _nikController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+  Future<void> _handleLogin() async {
+    final nik = _nikController.text.trim();
+    if (nik.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap masukkan Email/Nomor HP dan Kata Sandi.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Harap masukkan NIK dan kata sandi.'), backgroundColor: Colors.red),
       );
       return;
     }
 
-    final success = context.read<TaxProvider>().loginUser(
-      _emailController.text,
-      _passwordController.text,
-    );
-
-    if (success) {
+    setState(() => _isLoading = true);
+    try {
+      await context.read<TaxProvider>().loginUser(nik, _passwordController.text);
+      if (!mounted) return;
+      final tax = context.read<TaxProvider>();
+      context.go(tax.needsOnboarding ? '/register-nop' : '/home');
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login berhasil!'), backgroundColor: AppColors.success),
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
-      context.go('/home'); // Or /register-nop if we want to force onboarding again, but usually login goes to home.
-      // Wait, if they login, they might want to see the home.
-      // We will route to home.
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email/Nomor HP atau kata sandi salah, atau belum mendaftar.'), backgroundColor: Colors.red),
-      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -112,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Nomor HP / Email',
+                          'NIK',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -121,9 +120,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
-                          controller: _emailController,
+                          controller: _nikController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 16,
                           decoration: const InputDecoration(
-                            hintText: '0812-3456-7890',
+                            hintText: '16 digit NIK',
+                            counterText: '',
                           ),
                         ),
                         
@@ -178,12 +180,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _handleLogin,
+                            onPressed: _isLoading ? null : _handleLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.yellowDark,
                               foregroundColor: AppColors.primaryDark,
                             ),
-                            child: const Text('Masuk'),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text('Masuk'),
                           ),
                         ),
                       ],

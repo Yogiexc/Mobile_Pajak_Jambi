@@ -17,42 +17,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirm = true;
 
   final _nameController = TextEditingController();
+  final _nikController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _pinController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _nikController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _pinController.dispose();
     super.dispose();
   }
 
-  void _handleRegister() {
-    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty || _pinController.text.isEmpty) {
+  Future<void> _handleRegister() async {
+    if (_nameController.text.isEmpty ||
+        _nikController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _pinController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Harap lengkapi semua kolom wajib (termasuk PIN).'), backgroundColor: Colors.red),
       );
       return;
     }
 
-    context.read<TaxProvider>().registerUser(
-      _nameController.text, 
-      _emailController.text, 
-      _phoneController.text, 
-      _passwordController.text,
-      _pinController.text,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Akun berhasil dibuat!'), backgroundColor: AppColors.success),
-    );
-
-    context.go('/register-nop');
+    setState(() => _isLoading = true);
+    try {
+      await context.read<TaxProvider>().registerUser(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _phoneController.text.trim(),
+        _passwordController.text,
+        _pinController.text.trim(),
+        nik: _nikController.text.trim(),
+        passwordConfirmation: _confirmPasswordController.text,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Akun berhasil dibuat!'), backgroundColor: AppColors.success),
+      );
+      context.go('/register-nop');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -157,9 +178,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
+                          controller: _nikController,
                           keyboardType: TextInputType.number,
+                          maxLength: 16,
                           decoration: const InputDecoration(
                             hintText: 'Masukkan 16 digit NIK',
+                            counterText: '',
                           ),
                         ),
                         
@@ -242,6 +266,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
+                          controller: _confirmPasswordController,
                           obscureText: _obscureConfirm,
                           decoration: InputDecoration(
                             hintText: 'Ulangi kata sandi',
@@ -290,12 +315,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _handleRegister,
+                            onPressed: _isLoading ? null : _handleRegister,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.yellowDark,
                               foregroundColor: AppColors.primaryDark,
                             ),
-                            child: const Text('Buat Akun'),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text('Buat Akun'),
                           ),
                         ),
                       ],

@@ -41,7 +41,11 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: const BoxDecoration(
           color: Colors.white,
         ),
-        child: SingleChildScrollView(
+        child: RefreshIndicator(
+          color: AppColors.primaryDark,
+          onRefresh: () => context.read<TaxProvider>().refreshDashboard(),
+          child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Stack(
             children: [
               Positioned(
@@ -128,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Column(
                     children: [
                       SizedBox(
-                        height: 180, // Increased height to prevent overflow
+                        height: 204,
                         child: PageView.builder(
                           controller: _pageController,
                           onPageChanged: (index) {
@@ -226,75 +230,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.successLight.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Lunas', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.success)),
-                                const Icon(Icons.check_circle_outline, color: AppColors.success, size: 16),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text('${taxProvider.lunasCount} Objek', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.success)),
-                          ],
-                        ),
+                      child: _buildSummaryChip(
+                        label: 'Lunas',
+                        value: '${taxProvider.lunasCount} Objek',
+                        color: AppColors.success,
+                        background: AppColors.successLight.withValues(alpha: 0.3),
+                        icon: Icons.check_circle_outline,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.dangerLight.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Belum Bayar', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.danger)),
-                                const Icon(Icons.error_outline, color: AppColors.danger, size: 16),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text('${taxProvider.belumBayarCount} Objek', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.danger)),
-                          ],
-                        ),
+                      child: _buildSummaryChip(
+                        label: 'Belum Bayar',
+                        value: '${taxProvider.belumBayarCount} Objek',
+                        color: AppColors.danger,
+                        background: AppColors.dangerLight.withValues(alpha: 0.3),
+                        icon: Icons.error_outline,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Expanded(
-                      flex: 1,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgBlueLight,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Total Bayar', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
-                                const Icon(Icons.receipt_long_outlined, color: AppColors.primaryBlue, size: 16),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            FittedBox(fit: BoxFit.scaleDown, child: Text(currencyFormatter.format(taxProvider.totalTerbayar), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryDark))),
-                          ],
-                        ),
+                      child: _buildSummaryChip(
+                        label: 'Total Bayar',
+                        value: currencyFormatter.format(taxProvider.totalTerbayar),
+                        color: AppColors.primaryDark,
+                        background: AppColors.bgBlueLight,
+                        icon: Icons.receipt_long_outlined,
                       ),
                     ),
                   ],
@@ -459,6 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       ),
       ),
+      ),
     );
   }
 
@@ -530,10 +492,64 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildSummaryChip({
+    required String label,
+    required String value,
+    required Color color,
+    required Color background,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ),
+              Icon(icon, color: color, size: 14),
+            ],
+          ),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMainCard(BuildContext context, TaxBill bill, NumberFormat formatter) {
+    final unpaidCount = context.watch<TaxProvider>().belumBayarCount;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: AppColors.primaryDark,
         borderRadius: BorderRadius.circular(20),
@@ -546,31 +562,29 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.description, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Pajak Saya',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+              const Icon(Icons.description, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Pajak Saya',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
-                ],
+                ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white),
+              const Icon(Icons.chevron_right, color: Colors.white, size: 20),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -578,44 +592,58 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: AppColors.yellowDark.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.monetization_on_rounded, color: AppColors.yellowDark),
+                  child: const Icon(
+                    Icons.monetization_on_rounded,
+                    color: AppColors.yellowDark,
+                    size: 22,
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '2 tagihan belum dibayar',
+                        '$unpaidCount tagihan belum dibayar',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        formatter.format(bill.amount),
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryDark,
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          formatter.format(bill.amount),
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryDark,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () => context.push('/detail', extra: bill.id),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.yellowDark,
                     foregroundColor: AppColors.primaryDark,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -624,7 +652,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Lihat Tagihan',
+                        'Lihat',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
