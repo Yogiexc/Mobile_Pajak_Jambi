@@ -33,19 +33,23 @@ class _SelectPbjtScreenState extends State<SelectPbjtScreen> {
     }
   }
 
-  void _selectSubjenis(String subjenis) {
-    // Menambahkan tagihan spesifik ini ke provider
-    context.read<TaxProvider>().addBill(widget.npwpd, subjenis);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Tagihan $subjenis ditambahkan ke Beranda!'),
-        backgroundColor: AppColors.success,
-      ),
-    );
-    
-    // Go back to home
-    context.go('/home');
+  Future<void> _selectSubjenis(String subjenis) async {
+    try {
+      await context.read<TaxProvider>().addNpwpd(widget.npwpd);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('NPWPD didaftarkan. Tagihan $subjenis akan muncul jika ada di Bapenda.'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      context.go('/home');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -54,6 +58,8 @@ class _SelectPbjtScreenState extends State<SelectPbjtScreen> {
     final List<Map<String, dynamic>> activeTaxes = [
       {'title': 'PBJT Makanan & Minuman', 'status': 'Ada Tagihan', 'color': Colors.red},
       {'title': 'PBJT Perhotelan', 'status': 'Lunas', 'color': AppColors.success},
+      {'title': 'Pajak Reklame', 'status': 'Ada Tagihan', 'color': Colors.red},
+      {'title': 'Pajak Air Tanah', 'status': 'Tidak Ada Data', 'color': Colors.grey},
       {'title': 'PBJT Parkir', 'status': 'Tidak Ada Data', 'color': Colors.grey},
     ];
 

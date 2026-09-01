@@ -7,7 +7,7 @@ import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
 
-class DetailPajakScreen extends StatelessWidget {
+class DetailPajakScreen extends StatelessWidget {  
   final String? billId;
   
   const DetailPajakScreen({super.key, this.billId});
@@ -39,9 +39,8 @@ class DetailPajakScreen extends StatelessWidget {
     final shortLabel = config.inputLabel.split('(').first.trim();
 
     return Scaffold(
-      backgroundColor: AppColors.bgWhite,
       appBar: AppBar(
-        backgroundColor: AppColors.bgWhite,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
@@ -49,16 +48,24 @@ class DetailPajakScreen extends StatelessWidget {
         ),
         title: Text(
           'Detail Tagihan',
-          style: GoogleFonts.inter(
-            fontSize: 16,
+          style: GoogleFonts.lora(
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            fontStyle: FontStyle.italic,
             color: AppColors.primaryDark,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SafeArea(
+          child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
@@ -112,6 +119,15 @@ class DetailPajakScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
+                      bill.namaObjek,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
                       '$shortLabel: ${bill.taxId}',
                       style: GoogleFonts.inter(
                         fontSize: 12,
@@ -120,7 +136,7 @@ class DetailPajakScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      currencyFormatter.format(bill.amount),
+                      currencyFormatter.format(bill.amount + bill.denda),
                       style: GoogleFonts.inter(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -129,7 +145,7 @@ class DetailPajakScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Termasuk biaya denda sebesar Rp 0',
+                      'Termasuk biaya denda sebesar ${currencyFormatter.format(bill.denda)}',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: AppColors.textSecondary,
@@ -141,12 +157,12 @@ class DetailPajakScreen extends StatelessWidget {
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(color: Color(0xFFF3F4F6), height: 1),
                     ),
-                    _buildRow('Denda', 'Rp 0'),
+                    _buildRow('Denda', currencyFormatter.format(bill.denda)),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(color: Color(0xFFF3F4F6), height: 1),
                     ),
-                    _buildRow('Total', currencyFormatter.format(bill.amount), isBold: true),
+                    _buildRow('Total', currencyFormatter.format(bill.amount + bill.denda), isBold: true),
                   ],
                 ),
               ),
@@ -180,6 +196,7 @@ class DetailPajakScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

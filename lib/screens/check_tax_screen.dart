@@ -17,56 +17,90 @@ class CheckTaxScreen extends StatefulWidget {
 
 class _CheckTaxScreenState extends State<CheckTaxScreen> {
   final _taxIdController = TextEditingController();
-  late MainMenuConfig _config;
+  late TaxConfig _config;
 
   @override
   void initState() {
     super.initState();
-    _config = TaxConfigManager.getMainMenu(widget.serviceName);
+    // Use getDetailConfig instead of getMainMenu to support sub-taxes
+    _config = TaxConfigManager.getDetailConfig(widget.serviceName);
   }
 
-  void _checkTax() {
-    if (_taxIdController.text.isNotEmpty) {
-      if (widget.serviceName == 'PBJT') {
-        context.push('/select-pbjt', extra: _taxIdController.text);
-      } else {
-        context.read<TaxProvider>().addBill(_taxIdController.text, widget.serviceName);
-        
+  Future<void> _checkTax() async {
+    if (_taxIdController.text.isEmpty) return;
+
+    try {
+      final provider = context.read<TaxProvider>();
+      if (widget.serviceName == 'Pajak Lainnya') {
+        await provider.addNpwpd(_taxIdController.text);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Pencarian berhasil. Tagihan terkait ditambahkan ke Beranda!'),
+          const SnackBar(
+            content: Text('NPWPD berhasil didaftarkan!'),
             backgroundColor: AppColors.success,
           ),
         );
-        
+        context.pushReplacement('/other-taxes');
+      } else if (widget.serviceName == 'Pajak PBB') {
+        await provider.addNop(_taxIdController.text);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('NOP berhasil didaftarkan!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
         context.pop();
+      } else {
+        await provider.addBill(_taxIdController.text, widget.serviceName);
+        if (!mounted) return;
+        final newBill = context.read<TaxProvider>().pendingBills.last;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pencarian berhasil. Tagihan ditemukan!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.pushReplacement('/detail', extra: newBill.id);
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Cek Tagihan ${_config.title}',
-          style: GoogleFonts.inter(
-            fontSize: 16,
+          'Cek ${_config.title}',
+          style: GoogleFonts.lora(
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            fontStyle: FontStyle.italic,
             color: AppColors.primaryDark,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SafeArea(
+          child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,10 +116,10 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _taxIdController,
-                keyboardType: _config.keyboardType,
+                keyboardType: TextInputType.text,
                 textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(
-                  hintText: _config.hintText,
+                  hintText: widget.serviceName == 'Pajak PBB' ? 'Contoh: 15.71.010.001.001-0123.0' : (widget.serviceName == 'BPHTB' ? 'Contoh: TR-2026-00123' : 'Contoh: P.001234567890'),
                   hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
                   filled: true,
                   fillColor: AppColors.bgWhite,
@@ -129,6 +163,7 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

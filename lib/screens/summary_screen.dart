@@ -9,12 +9,14 @@ import '../providers/tax_provider.dart';
 
 class SummaryScreen extends StatelessWidget {
   final String? billId;
+  final int? paymentId;
   final String bankName;
   final bool isQris;
 
   const SummaryScreen({
     super.key,
     this.billId,
+    this.paymentId,
     this.bankName = 'Mandiri',
     this.isQris = false,
   });
@@ -46,9 +48,8 @@ class SummaryScreen extends StatelessWidget {
     final shortLabel = config.inputLabel.split('(').first.trim();
 
     return Scaffold(
-      backgroundColor: AppColors.bgWhite,
       appBar: AppBar(
-        backgroundColor: AppColors.bgWhite,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primaryDark, size: 20),
@@ -56,16 +57,24 @@ class SummaryScreen extends StatelessWidget {
         ),
         title: Text(
           'Ringkasan Pembayaran',
-          style: GoogleFonts.inter(
-            fontSize: 16,
+          style: GoogleFonts.lora(
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            fontStyle: FontStyle.italic,
             color: AppColors.primaryDark,
           ),
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SafeArea(
+          child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
@@ -95,7 +104,7 @@ class SummaryScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _buildRow('Nama Wajib Pajak', 'Dexa Wafinugrafi'),
+                    _buildRow('Nama Wajib Pajak', taxProvider.userName ?? 'Pengguna'),
                     const SizedBox(height: 16),
                     _buildRow(shortLabel, bill.taxId),
                     const Padding(
@@ -185,6 +194,7 @@ class SummaryScreen extends StatelessWidget {
                   onPressed: () {
                     context.push('/pin', extra: {
                       'billId': bill.id,
+                      'paymentId': paymentId,
                       'bankName': bankName,
                       'isQris': isQris,
                     });
@@ -218,6 +228,7 @@ class SummaryScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
