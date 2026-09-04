@@ -24,29 +24,39 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  bool _isLoading = false;
+
+  void _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap masukkan Email/Nomor HP dan Kata Sandi.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Harap masukkan NIK dan Kata Sandi.'), backgroundColor: Colors.red),
       );
       return;
     }
 
-    final success = context.read<TaxProvider>().loginUser(
+    setState(() {
+      _isLoading = true;
+    });
+
+    final success = await context.read<TaxProvider>().loginUser(
       _emailController.text,
       _passwordController.text,
     );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login berhasil!'), backgroundColor: AppColors.success),
       );
-      context.go('/home'); // Or /register-nop if we want to force onboarding again, but usually login goes to home.
-      // Wait, if they login, they might want to see the home.
-      // We will route to home.
+      context.go('/home'); 
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email/Nomor HP atau kata sandi salah, atau belum mendaftar.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('NIK atau kata sandi salah.'), backgroundColor: Colors.red),
       );
     }
   }
@@ -112,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Nomor HP / Email',
+                          'NIK',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -122,8 +132,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _emailController,
+                          keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
-                            hintText: '0812-3456-7890',
+                            hintText: 'Masukkan 16 digit NIK',
                           ),
                         ),
                         
@@ -178,12 +189,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _handleLogin,
+                            onPressed: _isLoading ? null : _handleLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.yellowDark,
                               foregroundColor: AppColors.primaryDark,
                             ),
-                            child: const Text('Masuk'),
+                            child: _isLoading 
+                                ? const SizedBox(
+                                    height: 20, 
+                                    width: 20, 
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark)
+                                  ) 
+                                : const Text('Masuk'),
                           ),
                         ),
                       ],
