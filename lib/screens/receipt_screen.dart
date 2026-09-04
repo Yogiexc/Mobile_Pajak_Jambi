@@ -14,10 +14,22 @@ class ReceiptScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final taxProvider = context.watch<TaxProvider>();
-    final transaction = taxProvider.history.firstWhere(
-      (t) => t.id == transactionId,
-      orElse: () => taxProvider.history.first, // fallback
-    );
+    TaxTransaction? transaction;
+    for (final item in taxProvider.history) {
+      if (item.id == transactionId) {
+        transaction = item;
+        break;
+      }
+    }
+    transaction ??= taxProvider.lastTransaction;
+
+    if (transaction == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF0F4F8),
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+        body: const Center(child: Text('Transaksi tidak ditemukan')),
+      );
+    }
 
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID',

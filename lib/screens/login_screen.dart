@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -13,51 +13,40 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _nikController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _nikController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  bool _isLoading = false;
-
-  void _handleLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+  Future<void> _handleLogin() async {
+    final nik = _nikController.text.trim();
+    if (nik.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap masukkan NIK dan Kata Sandi.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Harap masukkan NIK dan kata sandi.'), backgroundColor: Colors.red),
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    final success = await context.read<TaxProvider>().loginUser(
-      _emailController.text,
-      _passwordController.text,
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (success) {
+    setState(() => _isLoading = true);
+    try {
+      await context.read<TaxProvider>().loginUser(nik, _passwordController.text);
+      if (!mounted) return;
+      final tax = context.read<TaxProvider>();
+      context.go(tax.needsOnboarding ? '/register-nop' : '/home');
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login berhasil!'), backgroundColor: AppColors.success),
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
-      context.go('/home'); 
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NIK atau kata sandi salah.'), backgroundColor: Colors.red),
-      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -131,10 +120,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
-                          controller: _emailController,
+                          controller: _nikController,
                           keyboardType: TextInputType.number,
+                          maxLength: 16,
                           decoration: const InputDecoration(
-                            hintText: 'Masukkan 16 digit NIK',
+                            hintText: '16 digit NIK',
+                            counterText: '',
                           ),
                         ),
                         
@@ -194,12 +185,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               backgroundColor: AppColors.yellowDark,
                               foregroundColor: AppColors.primaryDark,
                             ),
-                            child: _isLoading 
+                            child: _isLoading
                                 ? const SizedBox(
-                                    height: 20, 
-                                    width: 20, 
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark)
-                                  ) 
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
                                 : const Text('Masuk'),
                           ),
                         ),

@@ -76,13 +76,27 @@ class _LinkedBankScreenState extends State<LinkedBankScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (nameController.text.isNotEmpty && numberController.text.isNotEmpty) {
-                          taxProvider.addLinkedBank(nameController.text, numberController.text, isPrimary);
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Rekening berhasil ditambahkan')),
-                          );
+                          try {
+                            await taxProvider.addLinkedBank(
+                              nameController.text,
+                              numberController.text,
+                              isPrimary,
+                            );
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Rekening berhasil ditambahkan')),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                              );
+                            }
+                          }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Harap isi semua kolom')),

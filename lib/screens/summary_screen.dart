@@ -9,12 +9,14 @@ import '../providers/tax_provider.dart';
 
 class SummaryScreen extends StatelessWidget {
   final String? billId;
+  final int? paymentId;
   final String bankName;
   final bool isQris;
 
   const SummaryScreen({
     super.key,
     this.billId,
+    this.paymentId,
     this.bankName = 'Mandiri',
     this.isQris = false,
   });
@@ -192,6 +194,7 @@ class SummaryScreen extends StatelessWidget {
                   onPressed: () {
                     context.push('/pin', extra: {
                       'billId': bill.id,
+                      'paymentId': paymentId,
                       'bankName': bankName,
                       'isQris': isQris,
                     });

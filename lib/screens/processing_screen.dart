@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../providers/tax_provider.dart';
+import '../api/api_exception.dart';
 
 class ProcessingScreen extends StatefulWidget {
   final Map<String, dynamic> paymentArgs;
@@ -22,20 +23,33 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   }
 
   Future<void> _processPayment() async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 2));
+    final args = widget.paymentArgs;
+    final billId = args['billId'] as String?;
+    final paymentId = args['paymentId'] as int?;
+    final bankName = args['bankName'] as String? ?? '-';
+    final isQris = args['isQris'] as bool? ?? false;
+    final pin = args['pin'] as String? ?? '';
 
-    if (!mounted) return;
-
-    final billId = widget.paymentArgs['billId'] as String;
-    final bankName = widget.paymentArgs['bankName'] as String;
-    final isQris = widget.paymentArgs['isQris'] as bool;
-
-    // Process payment in provider
-    context.read<TaxProvider>().payBill(billId, bankName, isQris);
-
-    // Go to success
-    context.go('/success', extra: widget.paymentArgs);
+    try {
+      if (billId == null || paymentId == null) {
+        throw const ApiException('Metode pembayaran belum dipilih.');
+      }
+      await context.read<TaxProvider>().payBill(
+        billId: billId,
+        paymentId: paymentId,
+        pin: pin,
+        bankName: bankName,
+        isQris: isQris,
+      );
+      if (!mounted) return;
+      context.go('/success');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+      context.pop();
+    }
   }
 
   @override

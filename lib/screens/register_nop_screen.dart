@@ -51,30 +51,32 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
       _isLoading = true;
     });
 
-    // Simulate verification API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    if (isNpwpd) {
-      provider.addNpwpd(taxId);
-    } else {
-      provider.addNop(taxId);
+    try {
+      if (isNpwpd) {
+        await provider.addNpwpd(taxId);
+      } else {
+        await provider.addNop(taxId);
+      }
+      if (!mounted) return;
+      setState(() {
+        _addedTaxes.add({'type': _selectedConfig.title, 'taxId': taxId});
+        _taxIdController.clear();
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${_selectedConfig.title} berhasil didaftarkan!'),
+          backgroundColor: AppColors.success,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
     }
-
-    setState(() {
-      _addedTaxes.add({'type': _selectedConfig.title, 'taxId': taxId});
-      _taxIdController.clear();
-      _isLoading = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${_selectedConfig.title} berhasil didaftarkan!'),
-        backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   void _finishSetup() {
@@ -226,6 +228,16 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: const BorderSide(color: AppColors.primaryDark),
                                   ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _selectedConfig.title == 'Pajak Lainnya'
+                                    ? 'Contoh data uji: 01.234.567.8-331'
+                                    : 'Contoh data uji: 3671010203040001',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: AppColors.textHint,
                                 ),
                               ),
                               

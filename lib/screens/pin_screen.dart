@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import '../providers/tax_provider.dart';
 import '../constants/colors.dart';
 
 class PinScreen extends StatefulWidget {
@@ -38,24 +36,12 @@ class _PinScreenState extends State<PinScreen> {
   }
 
   void _submitPin() {
-    final provider = context.read<TaxProvider>();
-    // Check if the pin matches the one saved in the provider
-    // If userPin is null, we assume dummy mode without registration works too.
-    if (provider.userPin != null && _pin != provider.userPin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('PIN yang Anda masukkan salah.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      setState(() {
-        _pin = '';
-      });
-      return;
-    }
-
-    // Send args to processing screen
-    context.pushReplacement('/processing', extra: widget.paymentArgs);
+    final pin = _pin;
+    setState(() => _pin = '');
+    context.push('/processing', extra: {
+      ...widget.paymentArgs,
+      'pin': pin,
+    });
   }
 
   @override

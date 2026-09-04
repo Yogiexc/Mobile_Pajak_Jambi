@@ -23,7 +23,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _pinController = TextEditingController();
-
   bool _isLoading = false;
 
   @override
@@ -38,8 +37,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _handleRegister() async {
-    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty || _pinController.text.isEmpty || _nikController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
+  Future<void> _handleRegister() async {
+    if (_nameController.text.isEmpty ||
+        _nikController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _pinController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Harap lengkapi semua kolom wajib.'), backgroundColor: Colors.red),
       );
@@ -53,35 +57,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    final success = await context.read<TaxProvider>().registerUser(
-      nik: _nikController.text,
-      name: _nameController.text, 
-      email: _emailController.text, 
-      phone: _phoneController.text, 
-      password: _passwordController.text,
-      passwordConfirmation: _confirmPasswordController.text,
-      pin: _pinController.text,
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (success) {
+    setState(() => _isLoading = true);
+    try {
+      await context.read<TaxProvider>().registerUser(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _phoneController.text.trim(),
+        _passwordController.text,
+        _pinController.text.trim(),
+        nik: _nikController.text.trim(),
+        passwordConfirmation: _confirmPasswordController.text,
+      );
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Akun berhasil dibuat!'), backgroundColor: AppColors.success),
       );
       context.go('/register-nop');
-    } else {
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal mendaftar. Pastikan data benar atau NIK belum terdaftar.'), backgroundColor: Colors.red),
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -189,8 +187,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         TextFormField(
                           controller: _nikController,
                           keyboardType: TextInputType.number,
+                          maxLength: 16,
                           decoration: const InputDecoration(
                             hintText: 'Masukkan 16 digit NIK',
+                            counterText: '',
                           ),
                         ),
                         
@@ -327,11 +327,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               backgroundColor: AppColors.yellowDark,
                               foregroundColor: AppColors.primaryDark,
                             ),
-                            child: _isLoading 
+                            child: _isLoading
                                 ? const SizedBox(
-                                    height: 20, 
-                                    width: 20, 
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryDark)
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
                                   )
                                 : const Text('Buat Akun'),
                           ),
