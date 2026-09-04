@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class TaxBill {
   final String id;
@@ -103,23 +105,77 @@ class TaxProvider extends ChangeNotifier {
       .where((t) => t.isSuccess)
       .fold(0, (sum, t) => sum + t.amount + t.denda);
 
-  void registerUser(String name, String email, String phone, String password, String pin) {
-    userName = name;
-    userEmail = email;
-    userPhone = phone;
-    userPassword = password;
-    userPin = pin;
-    notifyListeners();
+  Future<bool> registerUser({
+    required String nik,
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+    required String passwordConfirmation,
+    required String pin,
+  }) async {
+    try {
+      final response = await _apiService.post('/register', {
+        'nik': nik,
+        'full_name': name,
+        'email': email,
+        'phone_number': phone,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+        'pin_number': pin,
+      });
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+        
+        await _apiService.saveToken(token);
+        
+        userName = name;
+        userEmail = email;
+        userPhone = phone;
+        userNik = nik;
+        
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Register error: $e');
+      return false;
+    }
   }
 
-  bool loginUser(String identifier, String password) {
-    if (userEmail == null || userPassword == null) return false;
-    
-    // Allow login with either email or phone
-    bool identifierMatches = (userEmail == identifier) || (userPhone == identifier);
-    bool passwordMatches = userPassword == password;
-    
-    return identifierMatches && passwordMatches;
+  final ApiService _apiService = ApiService();
+
+  Future<bool> loginUser(String nik, String password) async {
+    try {
+      final response = await _apiService.post('/login', {
+        'nik': nik,
+        'password': password,
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+        
+        // Save token
+        await _apiService.saveToken(token);
+        
+        // Update user state (using the data from API)
+        userName = data['user']['full_name'];
+        userNik = nik;
+        
+        // You might want to call _apiService.get('/summary') after login
+        // to prefetch data, but for now we just return success.
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Login error: $e');
+      return false;
+    }
   }
 
   void updateProfile(String name, String email, String phone) {
