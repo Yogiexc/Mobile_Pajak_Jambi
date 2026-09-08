@@ -70,9 +70,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Akun berhasil dibuat!'), backgroundColor: AppColors.success),
+        const SnackBar(content: Text('Akun berhasil dibuat! Silakan login.'), backgroundColor: AppColors.success),
       );
-      context.go('/register-nop');
+      context.go('/login');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

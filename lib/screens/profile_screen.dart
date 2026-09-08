@@ -141,7 +141,46 @@ class ProfileScreen extends StatelessWidget {
                                   _buildMenuDivider(),
                                   _buildMenuItem(Icons.account_balance_outlined, 'Kelola Rekening Bank', onTap: () => context.push('/linked-bank')),
                                   _buildMenuDivider(),
-                                  _buildMenuItem(Icons.security_outlined, 'Keamanan Akun'),
+                                  _buildMenuItem(Icons.security_outlined, 'Keamanan Akun', onTap: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                      ),
+                                      builder: (context) => Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 20),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Keamanan Akun',
+                                              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            ListTile(
+                                              leading: const Icon(Icons.lock_outline, color: AppColors.primary),
+                                              title: Text('Ganti Kata Sandi', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                                              trailing: const Icon(Icons.chevron_right, size: 20),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                context.push('/change-password');
+                                              },
+                                            ),
+                                            const Divider(indent: 16, endIndent: 16),
+                                            ListTile(
+                                              leading: const Icon(Icons.dialpad, color: AppColors.primary),
+                                              title: Text('Ganti PIN Transaksi', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                                              trailing: const Icon(Icons.chevron_right, size: 20),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                context.push('/change-pin');
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }),
                                   _buildMenuDivider(),
                                   _buildMenuItem(Icons.notifications_none_outlined, 'Notifikasi'),
                                 ],
