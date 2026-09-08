@@ -12,6 +12,8 @@ class SummaryScreen extends StatelessWidget {
   final int? paymentId;
   final String bankName;
   final bool isQris;
+  final String paymentChannel;
+  final String? bankCode;
 
   const SummaryScreen({
     super.key,
@@ -19,6 +21,8 @@ class SummaryScreen extends StatelessWidget {
     this.paymentId,
     this.bankName = 'Mandiri',
     this.isQris = false,
+    this.paymentChannel = 'bank_transfer',
+    this.bankCode,
   });
 
   @override
@@ -113,12 +117,12 @@ class SummaryScreen extends StatelessWidget {
                     ),
                     _buildRow('Tagihan', currencyFormatter.format(bill.amount)),
                     const SizedBox(height: 16),
-                    _buildRow('Denda', 'Rp 0'),
+                    _buildRow('Denda', currencyFormatter.format(bill.denda)),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Divider(color: Color(0xFFF3F4F6), height: 1),
                     ),
-                    _buildRow('Total Bayar', currencyFormatter.format(bill.amount), isBold: true),
+                    _buildRow('Total Bayar', currencyFormatter.format(bill.total), isBold: true),
                   ],
                 ),
               ),
@@ -197,6 +201,8 @@ class SummaryScreen extends StatelessWidget {
                       'paymentId': paymentId,
                       'bankName': bankName,
                       'isQris': isQris,
+                      'paymentChannel': paymentChannel,
+                      'bankCode': bankCode,
                     });
                   },
                   style: ElevatedButton.styleFrom(
@@ -208,7 +214,7 @@ class SummaryScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Bayar Sekarang - ${currencyFormatter.format(bill.amount)}',
+                    'Bayar Sekarang - ${currencyFormatter.format(bill.total)}',
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

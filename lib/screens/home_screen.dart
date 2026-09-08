@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Column(
                     children: [
                       SizedBox(
-                        height: 204,
+                        height: 220,
                         child: PageView.builder(
                           controller: _pageController,
                           onPageChanged: (index) {
@@ -238,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.check_circle_outline,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: _buildSummaryChip(
                         label: 'Belum Bayar',
@@ -248,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.error_outline,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: _buildSummaryChip(
                         label: 'Total Bayar',
@@ -389,11 +389,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  item.isSuccess ? 'Berhasil' : 'Gagal',
+                                  item.statusLabel,
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: item.isSuccess ? AppColors.success : AppColors.danger,
+                                    color: item.isSuccess
+                                        ? AppColors.success
+                                        : item.isPending
+                                            ? AppColors.warning
+                                            : AppColors.danger,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
@@ -500,7 +504,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(16),
@@ -516,13 +520,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
                 ),
               ),
-              Icon(icon, color: color, size: 14),
+              Icon(icon, color: color, size: 16),
             ],
           ),
           const SizedBox(height: 8),
@@ -533,7 +537,7 @@ class _HomeScreenState extends State<HomeScreen> {
               value,
               maxLines: 1,
               style: GoogleFonts.inter(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -549,7 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.primaryDark,
         borderRadius: BorderRadius.circular(20),
@@ -566,25 +570,28 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.description, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Pajak Saya',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+              Row(
+                children: [
+                  const Icon(Icons.description, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Pajak Saya',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
+                ],
               ),
-              const Icon(Icons.chevron_right, color: Colors.white, size: 20),
+              const Icon(Icons.chevron_right, color: Colors.white),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -592,18 +599,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: AppColors.yellowDark.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.monetization_on_rounded,
-                    color: AppColors.yellowDark,
-                    size: 22,
-                  ),
+                  child: const Icon(Icons.monetization_on_rounded, color: AppColors.yellowDark),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,18 +616,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
                           formatter.format(bill.amount),
                           style: GoogleFonts.inter(
-                            fontSize: 18,
+                            fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: AppColors.primaryDark,
                           ),
@@ -640,10 +643,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: AppColors.yellowDark,
                     foregroundColor: AppColors.primaryDark,
                     elevation: 0,
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -652,7 +652,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Lihat',
+                        'Lihat Tagihan',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,

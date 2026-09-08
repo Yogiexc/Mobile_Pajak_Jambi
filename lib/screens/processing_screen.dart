@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../api/api_exception.dart';
 import '../constants/colors.dart';
 import '../providers/tax_provider.dart';
-import '../api/api_exception.dart';
 
 class ProcessingScreen extends StatefulWidget {
   final Map<String, dynamic> paymentArgs;
@@ -25,24 +25,34 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   Future<void> _processPayment() async {
     final args = widget.paymentArgs;
     final billId = args['billId'] as String?;
+    final paymentChannel = args['paymentChannel'] as String? ??
+        ((args['isQris'] as bool? ?? false) ? 'qris' : 'bank_transfer');
+    final bankCode = args['bankCode'] as String?;
     final paymentId = args['paymentId'] as int?;
-    final bankName = args['bankName'] as String? ?? '-';
-    final isQris = args['isQris'] as bool? ?? false;
+    final bankName = args['bankName'] as String?;
     final pin = args['pin'] as String? ?? '';
 
     try {
-      if (billId == null || paymentId == null) {
-        throw const ApiException('Metode pembayaran belum dipilih.');
+      if (billId == null || billId.isEmpty) {
+        throw const ApiException('Tagihan belum dipilih.');
       }
-      await context.read<TaxProvider>().payBill(
+      if (paymentChannel == 'bank_transfer' && (bankCode == null || bankCode.isEmpty)) {
+        throw const ApiException('Bank belum dipilih.');
+      }
+      final tx = await context.read<TaxProvider>().payBill(
         billId: billId,
-        paymentId: paymentId,
         pin: pin,
+        paymentChannel: paymentChannel,
+        bankCode: bankCode,
+        paymentId: paymentId,
         bankName: bankName,
-        isQris: isQris,
       );
       if (!mounted) return;
-      context.go('/success');
+      if (tx.isSuccess) {
+        context.go('/success');
+      } else {
+        context.go('/await-payment');
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../api/api_client.dart';
 import '../api/api_exception.dart';
+import '../constants/payment_options.dart';
 
 class TaxBill {
   final String id;
@@ -41,9 +42,14 @@ class TaxTransaction {
   final double denda;
   final DateTime date;
   final String bankName;
-  final bool isSuccess;
+  final String status;
   final bool isQris;
   final String transactionRef;
+  final String? vaNumber;
+  final String? qrString;
+  final String? qrImageUrl;
+  final DateTime? vaExpiredAt;
+  final DateTime? qrExpiredAt;
 
   TaxTransaction({
     required this.id,
@@ -54,10 +60,28 @@ class TaxTransaction {
     this.denda = 0,
     required this.date,
     required this.bankName,
-    required this.isSuccess,
+    required this.status,
     required this.isQris,
     this.transactionRef = '',
+    this.vaNumber,
+    this.qrString,
+    this.qrImageUrl,
+    this.vaExpiredAt,
+    this.qrExpiredAt,
   });
+
+  bool get isSuccess => status == 'success';
+  bool get isPending => status == 'pending';
+  bool get isFailed => status == 'failed' || status == 'expired';
+
+  String get statusLabel {
+    return switch (status) {
+      'success' => 'Berhasil',
+      'pending' => 'Menunggu',
+      'expired' => 'Kedaluwarsa',
+      _ => 'Gagal',
+    };
+  }
 }
 
 class LinkedBank {
@@ -66,6 +90,7 @@ class LinkedBank {
   final String number;
   final bool isPrimary;
   final String type;
+  final String provider;
 
   LinkedBank({
     required this.id,
@@ -73,6 +98,7 @@ class LinkedBank {
     required this.number,
     required this.isPrimary,
     this.type = 'bank_transfer',
+    this.provider = '',
   });
 }
 
@@ -94,6 +120,7 @@ class TaxProvider extends ChangeNotifier {
   String? userNik;
   bool _loggedIn = false;
   bool _loading = false;
+  bool _onboardingComplete = false;
   TaxTransaction? lastTransaction;
 
   bool get isLoggedIn => _loggedIn;
@@ -102,7 +129,7 @@ class TaxProvider extends ChangeNotifier {
   List<String> get nops => _nops;
   bool get hasNpwpd => _npwpd != null;
   bool get hasNop => _nops.isNotEmpty;
-  bool get needsOnboarding => _loggedIn && !hasNop && !hasNpwpd;
+  bool get needsOnboarding => _loggedIn && !_onboardingComplete;
   List<TaxBill> get pendingBills => _pendingBills;
   List<TaxTransaction> get history => _history;
   List<LinkedBank> get linkedBanks => _linkedBanks;
@@ -151,8 +178,6 @@ class TaxProvider extends ChangeNotifier {
       'password_confirmation': passwordConfirmation,
       'pin_number': pin,
     });
-    // API backend tidak mereturn token saat register. 
-    // User harus diarahkan ke halaman login setelah registrasi berhasil.
   }
 
   Future<void> loginUser(String nik, String password) async {
@@ -161,7 +186,11 @@ class TaxProvider extends ChangeNotifier {
       'password': password,
     });
 
-    await _api.setToken(data['token'] as String);
+    final token = data['token']?.toString();
+    if (token == null || token.isEmpty) {
+      throw const ApiException('Login berhasil, tetapi token tidak diterima dari server.');
+    }
+    await _api.setToken(token);
     _applyUser({
       ...?_asMap(data['user']),
       'nik': nik,
@@ -171,12 +200,16 @@ class TaxProvider extends ChangeNotifier {
     await refreshDashboard();
   }
 
-  Future<void> requestOtp(String nik, String purpose, String channel) async {
-    await _api.post('/otp/request', {
+  Future<String?> requestOtp(String nik, String purpose, String channel) async {
+    final data = await _api.post('/otp/request', {
       'nik': nik,
       'purpose': purpose,
       'channel': channel,
     });
+    if (data is Map && data['otp_code'] != null) {
+      return data['otp_code'].toString();
+    }
+    return null;
   }
 
   Future<void> verifyOtp(
@@ -243,11 +276,14 @@ class TaxProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addLinkedBank(String name, String number, bool isPrimary) async {
+  Future<void> addLinkedBank({
+    required String provider,
+    required String type,
+    bool isPrimary = false,
+  }) async {
     await _api.post('/payment-methods', {
-      'type': 'bank_transfer',
-      'provider': name,
-      'masked_number': _maskNumber(number),
+      'type': type,
+      'provider': provider,
       'is_default': isPrimary,
     });
     await _loadPaymentMethods();
@@ -257,24 +293,36 @@ class TaxProvider extends ChangeNotifier {
   Future<LinkedBank> ensurePaymentMethod({
     required String provider,
     required String type,
-    String? maskedNumber,
   }) async {
     final existing = _linkedBanks.where(
-      (b) => b.name.toLowerCase() == provider.toLowerCase() && b.type == type,
+      (b) => b.provider.toLowerCase() == provider.toLowerCase() && b.type == type,
     );
     if (existing.isNotEmpty) return existing.first;
 
     await _api.post('/payment-methods', {
       'type': type,
       'provider': provider,
-      'masked_number': maskedNumber,
       'is_default': _linkedBanks.isEmpty,
     });
     await _loadPaymentMethods();
     notifyListeners();
     return _linkedBanks.firstWhere(
-      (b) => b.name.toLowerCase() == provider.toLowerCase() && b.type == type,
+      (b) => b.provider.toLowerCase() == provider.toLowerCase() && b.type == type,
     );
+  }
+
+  Future<Map<String, dynamic>> checkNop(String nop) async {
+    return _asMap(await _api.post('/nops/check', {
+          'nop_number': nop.trim(),
+        })) ??
+        (throw const ApiException('Respons cek NOP tidak valid.'));
+  }
+
+  Future<Map<String, dynamic>> checkNpwpd(String npwpd) async {
+    return _asMap(await _api.post('/npwpd/check', {
+          'npwpd_number': npwpd.trim(),
+        })) ??
+        (throw const ApiException('Respons cek NPWPD tidak valid.'));
   }
 
   Future<void> addNpwpd(String npwpd) async {
@@ -303,27 +351,49 @@ class TaxProvider extends ChangeNotifier {
 
   Future<TaxTransaction> payBill({
     required String billId,
-    required int paymentId,
     required String pin,
-    required String bankName,
-    required bool isQris,
+    required String paymentChannel,
+    String? bankCode,
+    int? paymentId,
+    String? bankName,
   }) async {
+    final body = <String, dynamic>{
+      'id_bill': int.parse(billId),
+      'payment_channel': paymentChannel,
+      'pin': pin,
+      'idempotency_key': _uuid.v4(),
+    };
+    if (paymentChannel == 'bank_transfer' && bankCode != null) {
+      body['bank_code'] = bankCode;
+    }
+    if (paymentId != null) {
+      body['id_payment'] = paymentId;
+    }
+
     final initiated = ApiClient.unwrap(
-      await _api.post('/transactions/initiate', {
-        'id_bill': int.parse(billId),
-        'id_payment': paymentId,
-        'idempotency_key': _uuid.v4(),
-      }),
+      await _api.post('/transactions/initiate', body),
     ) as Map<String, dynamic>;
 
-    final txId = initiated['id_transactions'];
-    final confirmed = ApiClient.unwrap(
-      await _api.post('/transactions/$txId/confirm-pin', {'pin': pin}),
-    ) as Map<String, dynamic>;
-
-    lastTransaction = _mapTransaction(confirmed, fallbackBank: bankName, fallbackQris: isQris);
+    lastTransaction = _mapTransaction(
+      initiated,
+      fallbackBank: bankName,
+      fallbackQris: paymentChannel == 'qris',
+    );
     await refreshDashboard();
     return lastTransaction!;
+  }
+
+  Future<TaxTransaction> fetchTransaction(String id) async {
+    final data = ApiClient.unwrap(await _api.get('/transactions/$id'))
+        as Map<String, dynamic>;
+    lastTransaction = _mapTransaction(data);
+    notifyListeners();
+    return lastTransaction!;
+  }
+
+  void inspectTransaction(TaxTransaction tx) {
+    lastTransaction = tx;
+    notifyListeners();
   }
 
   Future<void> refreshDashboard() async {
@@ -333,14 +403,29 @@ class TaxProvider extends ChangeNotifier {
     try {
       _pendingBills.clear();
       await Future.wait([
+        _loadOnboarding(),
         _loadNops(),
         _loadNpwpd(),
         _loadPaymentMethods(),
         _loadTransactions(),
       ]);
+      if (!_onboardingComplete) {
+        _onboardingComplete = _nops.isNotEmpty || _npwpd != null;
+      }
     } finally {
       _loading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> _loadOnboarding() async {
+    try {
+      final data = await _api.get('/me/onboarding-status');
+      if (data is Map) {
+        _onboardingComplete = data['onboarding_complete'] == true;
+      }
+    } catch (_) {
+      // Fallback di refreshDashboard dari daftar NOP/NPWPD.
     }
   }
 
@@ -368,13 +453,14 @@ class TaxProvider extends ChangeNotifier {
     final data = ApiClient.unwrap(raw);
     _npwpd = null;
 
-    if (data is Map<String, dynamic>) {
-      _npwpd = data['npwpd_number']?.toString();
+    final map = _asMap(data);
+    if (map != null) {
+      _npwpd = map['npwpd_number']?.toString();
       _appendBills(
-        bills: data['bills'],
-        title: data['business_type']?.toString() ?? 'Pajak Usaha',
+        bills: map['bills'],
+        title: map['business_type']?.toString() ?? 'Pajak Usaha',
         taxId: _npwpd ?? '',
-        namaObjek: data['business_name']?.toString() ?? 'Usaha',
+        namaObjek: map['business_name']?.toString() ?? 'Usaha',
       );
     }
   }
@@ -385,13 +471,15 @@ class TaxProvider extends ChangeNotifier {
     if (data is List) {
       for (final item in data) {
         final map = item as Map<String, dynamic>;
+        final provider = map['provider']?.toString() ?? '';
         _linkedBanks.add(
           LinkedBank(
             id: _asInt(map['id_payment']),
-            name: map['provider']?.toString() ?? 'Metode',
-            number: map['masked_number']?.toString() ?? '-',
+            name: PaymentOptions.labelFor(provider),
+            number: map['type_label']?.toString() ?? '-',
             isPrimary: map['is_default'] == true,
             type: map['type']?.toString() ?? 'bank_transfer',
+            provider: provider,
           ),
         );
       }
@@ -446,6 +534,8 @@ class TaxProvider extends ChangeNotifier {
     final paidAt = DateTime.tryParse(map['paid_at']?.toString() ?? '') ??
         DateTime.tryParse(map['created_at']?.toString() ?? '') ??
         DateTime.now();
+    final channel = map['payment_channel']?.toString();
+    final paymentProvider = payment is Map ? payment['provider']?.toString() : null;
 
     return TaxTransaction(
       id: map['id_transactions'].toString(),
@@ -455,14 +545,19 @@ class TaxProvider extends ChangeNotifier {
       amount: _asDouble(map['amount']),
       denda: bill is Map ? _asDouble(bill['penalty_amount']) : 0,
       date: paidAt,
-      bankName: payment is Map
-          ? (payment['provider']?.toString() ?? fallbackBank ?? '-')
-          : (fallbackBank ?? '-'),
-      isSuccess: map['status'] == 'success',
-      isQris: payment is Map
-          ? payment['type'] == 'qris'
-          : fallbackQris,
+      bankName: map['bank_label']?.toString() ??
+          (paymentProvider != null ? PaymentOptions.labelFor(paymentProvider) : null) ??
+          map['payment_channel_label']?.toString() ??
+          fallbackBank ??
+          '-',
+      status: map['status']?.toString() ?? 'pending',
+      isQris: channel == 'qris' || fallbackQris,
       transactionRef: map['transaction_ref']?.toString() ?? '',
+      vaNumber: map['va_number']?.toString(),
+      qrString: map['qr_string']?.toString(),
+      qrImageUrl: map['qr_image_url']?.toString(),
+      vaExpiredAt: DateTime.tryParse(map['va_expired_at']?.toString() ?? ''),
+      qrExpiredAt: DateTime.tryParse(map['qr_expired_at']?.toString() ?? ''),
     );
   }
 
@@ -488,6 +583,7 @@ class TaxProvider extends ChangeNotifier {
 
   void _clearSession() {
     _loggedIn = false;
+    _onboardingComplete = false;
     _pendingBills.clear();
     _history.clear();
     _linkedBanks.clear();
@@ -515,11 +611,5 @@ class TaxProvider extends ChangeNotifier {
   double _asDouble(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
-  String _maskNumber(String number) {
-    final digits = number.replaceAll(RegExp(r'\D'), '');
-    if (digits.length <= 4) return digits;
-    return '**** ${digits.substring(digits.length - 4)}';
   }
 }

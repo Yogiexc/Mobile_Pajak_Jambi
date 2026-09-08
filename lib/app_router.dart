@@ -21,6 +21,7 @@ import 'screens/select_pbjt_screen.dart';
 import 'screens/receipt_screen.dart';
 import 'screens/pin_screen.dart';
 import 'screens/processing_screen.dart';
+import 'screens/awaiting_payment_screen.dart';
 import 'screens/faq_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/linked_bank_screen.dart';
@@ -149,6 +150,9 @@ class AppRouter {
                 paymentId: args?['paymentId'] as int?,
                 bankName: args?['bankName'] as String? ?? 'Mandiri',
                 isQris: args?['isQris'] as bool? ?? false,
+                paymentChannel: args?['paymentChannel'] as String? ??
+                    ((args?['isQris'] as bool? ?? false) ? 'qris' : 'bank_transfer'),
+                bankCode: args?['bankCode'] as String?,
               ),
             );
           },
@@ -157,6 +161,11 @@ class AppRouter {
           path: '/success',
           pageBuilder: (context, state) =>
               AppPage.scaleFade(state, const PaymentSuccessScreen()),
+        ),
+        GoRoute(
+          path: '/await-payment',
+          pageBuilder: (context, state) =>
+              AppPage.fadeUp(state, const AwaitingPaymentScreen()),
         ),
         GoRoute(
           path: '/receipt',

@@ -35,14 +35,21 @@ class _ForgotAuthScreenState extends State<ForgotAuthScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await context.read<TaxProvider>().requestOtp(
+      final otpCode = await context.read<TaxProvider>().requestOtp(
         _nikController.text.trim(),
         widget.purpose,
         _selectedChannel,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kode OTP berhasil dikirim.'), backgroundColor: AppColors.success),
+        SnackBar(
+          content: Text(
+            otpCode != null
+                ? 'Kode OTP (dummy): $otpCode'
+                : 'Kode OTP berhasil dikirim.',
+          ),
+          backgroundColor: AppColors.success,
+        ),
       );
       context.push('/otp-verification', extra: {
         'nik': _nikController.text.trim(),

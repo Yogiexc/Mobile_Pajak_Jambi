@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../constants/colors.dart';
+import '../constants/payment_options.dart';
 import '../providers/tax_provider.dart';
 
 class PaymentMethodScreen extends StatefulWidget {
@@ -14,38 +15,29 @@ class PaymentMethodScreen extends StatefulWidget {
 }
 
 class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
-  int? _selectedId;
-  String? _selectedName;
-  bool _isQris = false;
-  bool _busy = false;
+  int? _selectedPaymentId;
+  String _selectedName = '';
+  String _paymentChannel = '';
+  String? _bankCode;
 
-  Future<void> _selectPreset(String name, String type) async {
-    setState(() => _busy = true);
-    try {
-      final method = await context.read<TaxProvider>().ensurePaymentMethod(
-        provider: name,
-        type: type,
-        maskedNumber: type == 'qris' ? 'QRIS' : null,
-      );
-      if (!mounted) return;
-      setState(() {
-        _selectedId = method.id;
-        _selectedName = method.name;
-        _isQris = method.type == 'qris';
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+  void _selectChannel({
+    required String name,
+    required String channel,
+    String? bankCode,
+    int? paymentId,
+  }) {
+    setState(() {
+      _selectedName = name;
+      _paymentChannel = channel;
+      _bankCode = bankCode;
+      _selectedPaymentId = paymentId;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final banks = context.watch<TaxProvider>().linkedBanks;
+    final canContinue = _paymentChannel.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -70,126 +62,148 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-        ),
+        color: Colors.white,
         child: SafeArea(
           child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'METODE TERSIMPAN',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 1.0,
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (banks.isEmpty)
-                Text(
-                  'Belum ada metode tersimpan. Pilih bank atau QRIS di bawah.',
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
-                ),
-              ...banks.map((bank) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildMethodCard(
-                  name: bank.name,
-                  subtitle: bank.number,
-                  icon: bank.type == 'qris' ? Icons.qr_code_2 : Icons.account_balance,
-                  selected: _selectedId == bank.id,
-                  onTap: () {
-                    setState(() {
-                      _selectedId = bank.id;
-                      _selectedName = bank.name;
-                      _isQris = bank.type == 'qris';
-                    });
-                  },
-                ),
-              )),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: () => context.push('/linked-bank'),
-                  child: Text(
-                    'Kelola rekening',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'LAINNYA',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 1.0,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildMethodCard(
-                name: 'QRIS',
-                subtitle: 'Scan & bayar',
-                icon: Icons.qr_code_2,
-                selected: _isQris && _selectedName == 'QRIS',
-                onTap: () => _selectPreset('QRIS', 'qris'),
-              ),
-              const SizedBox(height: 12),
-              _buildMethodCard(
-                name: 'Mandiri',
-                subtitle: 'Transfer bank',
-                icon: Icons.account_balance,
-                selected: !_isQris && _selectedName == 'Mandiri',
-                onTap: () => _selectPreset('Mandiri', 'bank_transfer'),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _busy || _selectedId == null
-                      ? null
-                      : () {
-                          context.push('/summary', extra: {
-                            'billId': widget.billId,
-                            'paymentId': _selectedId,
-                            'bankName': _selectedName,
-                            'isQris': _isQris,
-                          });
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _selectedId != null ? AppColors.primaryDark : Colors.grey.withValues(alpha: 0.5),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _busy
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(
-                          'Lanjut',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ListView(
+                    children: [
+                      Text(
+                        'METODE TERSIMPAN',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (banks.isEmpty)
+                        Text(
+                          'Belum ada metode tersimpan. Pilih bank atau QRIS di bawah.',
+                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                        ),
+                      ...banks.map((bank) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildMethodCard(
+                              name: bank.name,
+                              subtitle: bank.number,
+                              icon: bank.type == 'qris' ? Icons.qr_code_2 : Icons.account_balance,
+                              selected: _selectedPaymentId == bank.id,
+                              onTap: () => _selectChannel(
+                                name: bank.name,
+                                channel: bank.type,
+                                bankCode: bank.type == 'qris' ? null : bank.provider,
+                                paymentId: bank.id,
+                              ),
+                            ),
+                          )),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () => context.push('/linked-bank'),
+                          child: Text(
+                            'Kelola rekening',
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryDark,
+                            ),
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'TRANSFER BANK',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ...PaymentOptions.banks.map((bank) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildMethodCard(
+                              name: bank.label,
+                              subtitle: 'Virtual Account',
+                              icon: Icons.account_balance,
+                              selected: _selectedPaymentId == null &&
+                                  _paymentChannel == 'bank_transfer' &&
+                                  _bankCode == bank.code,
+                              onTap: () => _selectChannel(
+                                name: bank.label,
+                                channel: 'bank_transfer',
+                                bankCode: bank.code,
+                              ),
+                            ),
+                          )),
+                      Text(
+                        'LAINNYA',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildMethodCard(
+                        name: 'QRIS',
+                        subtitle: 'Scan & bayar',
+                        icon: Icons.qr_code_2,
+                        selected: _selectedPaymentId == null && _paymentChannel == 'qris',
+                        onTap: () => _selectChannel(
+                          name: 'QRIS',
+                          channel: 'qris',
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: canContinue
+                        ? () {
+                            context.push('/summary', extra: {
+                              'billId': widget.billId,
+                              'paymentId': _selectedPaymentId,
+                              'bankName': _selectedName,
+                              'isQris': _paymentChannel == 'qris',
+                              'paymentChannel': _paymentChannel,
+                              'bankCode': _bankCode,
+                            });
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: canContinue
+                          ? AppColors.primaryDark
+                          : Colors.grey.withValues(alpha: 0.5),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Lanjut',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

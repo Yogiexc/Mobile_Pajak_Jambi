@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import '../widgets/tax_preview_dialog.dart';
 
 class RegisterNopScreen extends StatefulWidget {
   const RegisterNopScreen({super.key});
@@ -52,6 +53,36 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
     });
 
     try {
+      late final Map<String, dynamic> preview;
+      late final Map<String, String> rows;
+      if (isNpwpd) {
+        preview = await provider.checkNpwpd(taxId);
+        rows = {
+          'NPWPD': preview['npwpd_number']?.toString() ?? taxId,
+          'Nama Usaha': preview['business_name']?.toString() ?? '-',
+          'Jenis Usaha': preview['business_type']?.toString() ?? '-',
+          'Pemilik': preview['owner_name']?.toString() ?? '-',
+        };
+      } else {
+        preview = await provider.checkNop(taxId);
+        rows = {
+          'NOP': preview['nop_number']?.toString() ?? taxId,
+          'Objek Pajak': preview['object_name']?.toString() ?? '-',
+          'Pemilik': preview['owner_name']?.toString() ?? '-',
+          'Alamat': preview['object_address']?.toString() ?? '-',
+        };
+      }
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      final confirmed = await showTaxObjectConfirmDialog(
+        context: context,
+        title: isNpwpd ? 'Konfirmasi NPWPD' : 'Konfirmasi NOP',
+        rows: rows,
+      );
+      if (!confirmed || !mounted) return;
+
+      setState(() => _isLoading = true);
       if (isNpwpd) {
         await provider.addNpwpd(taxId);
       } else {

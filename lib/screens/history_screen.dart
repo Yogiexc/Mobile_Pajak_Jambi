@@ -266,7 +266,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final config = TaxConfigManager.getDetailConfig(item.title);
 
     return GestureDetector(
-      onTap: () => context.push('/receipt', extra: item.id),
+      onTap: () {
+        if (item.isPending) {
+          context.read<TaxProvider>().inspectTransaction(item);
+          context.push('/await-payment');
+          return;
+        }
+        if (item.isSuccess) {
+          context.push('/receipt', extra: item.id);
+        }
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
@@ -333,15 +342,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (item.isSuccess ? AppColors.successLight : AppColors.dangerLight).withValues(alpha: 0.5),
+                  color: (item.isSuccess
+                          ? AppColors.successLight
+                          : item.isPending
+                              ? AppColors.warningLight
+                              : AppColors.dangerLight)
+                      .withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  item.isSuccess ? 'Berhasil' : 'Gagal',
+                  item.statusLabel,
                   style: GoogleFonts.inter(
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
-                    color: item.isSuccess ? AppColors.success : AppColors.danger,
+                    color: item.isSuccess
+                        ? AppColors.success
+                        : item.isPending
+                            ? AppColors.warning
+                            : AppColors.danger,
                   ),
                 ),
               ),

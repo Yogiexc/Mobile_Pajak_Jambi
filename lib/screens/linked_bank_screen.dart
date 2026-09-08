@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../constants/colors.dart';
+import '../constants/payment_options.dart';
 import '../providers/tax_provider.dart';
 
 class LinkedBankScreen extends StatefulWidget {
@@ -14,8 +15,7 @@ class LinkedBankScreen extends StatefulWidget {
 
 class _LinkedBankScreenState extends State<LinkedBankScreen> {
   void _showAddBankDialog(BuildContext context, TaxProvider taxProvider) {
-    final nameController = TextEditingController();
-    final numberController = TextEditingController();
+    String selectedCode = PaymentOptions.banks.first.code;
     bool isPrimary = false;
 
     showModalBottomSheet(
@@ -40,17 +40,57 @@ class _LinkedBankScreenState extends State<LinkedBankScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tambah Rekening Baru',
+                    'Tambah Metode Bank',
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: AppColors.primaryDark,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pilih bank yang didukung untuk Virtual Account.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 24),
-                  _buildTextField('Nama Bank (contoh: BCA, BNI, Jago)', nameController),
-                  const SizedBox(height: 16),
-                  _buildTextField('Nomor Rekening', numberController, isNumber: true),
+                  Text(
+                    'Bank',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ), 
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgWhite,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedCode,
+                        isExpanded: true,
+                        items: PaymentOptions.banks
+                            .map(
+                              (bank) => DropdownMenuItem(
+                                value: bank.code,
+                                child: Text(bank.label),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => selectedCode = value);
+                        },
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -64,7 +104,7 @@ class _LinkedBankScreenState extends State<LinkedBankScreen> {
                         activeColor: AppColors.primaryBlue,
                       ),
                       Text(
-                        'Jadikan rekening utama',
+                        'Jadikan metode utama',
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           color: AppColors.primaryDark,
@@ -77,30 +117,24 @@ class _LinkedBankScreenState extends State<LinkedBankScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () async {
-                        if (nameController.text.isNotEmpty && numberController.text.isNotEmpty) {
-                          try {
-                            await taxProvider.addLinkedBank(
-                              nameController.text,
-                              numberController.text,
-                              isPrimary,
-                            );
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Rekening berhasil ditambahkan')),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-                              );
-                            }
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Harap isi semua kolom')),
+                        try {
+                          await taxProvider.addLinkedBank(
+                            provider: selectedCode,
+                            type: 'bank_transfer',
+                            isPrimary: isPrimary,
                           );
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Metode pembayaran berhasil ditambahkan')),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -112,7 +146,7 @@ class _LinkedBankScreenState extends State<LinkedBankScreen> {
                         ),
                       ),
                       child: Text(
-                        'Simpan Rekening',
+                        'Simpan',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -127,48 +161,6 @@ class _LinkedBankScreenState extends State<LinkedBankScreen> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: AppColors.primaryDark,
-          ),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: AppColors.bgWhite,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primaryBlue),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
