@@ -4,6 +4,10 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/register_nop_screen.dart';
+import 'screens/forgot_auth_screen.dart';
+import 'screens/otp_verification_screen.dart';
+import 'screens/change_password_screen.dart';
+import 'screens/change_pin_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/home_screen.dart';
 import 'screens/history_screen.dart';
@@ -31,7 +35,7 @@ class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-  static const _publicRoutes = {'/', '/login', '/register'};
+  static const _publicRoutes = {'/', '/login', '/register', '/forgot-auth', '/otp-verification'};
 
   static GoRouter create(TaxProvider tax) {
     return GoRouter(
@@ -71,6 +75,33 @@ class AppRouter {
           path: '/register-nop',
           pageBuilder: (context, state) =>
               AppPage.slide(state, const RegisterNopScreen()),
+        ),
+        GoRoute(
+          path: '/forgot-auth',
+          pageBuilder: (context, state) {
+            final purpose = state.extra as String? ?? 'reset_password';
+            return AppPage.slide(state, ForgotAuthScreen(purpose: purpose));
+          },
+        ),
+        GoRoute(
+          path: '/otp-verification',
+          pageBuilder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>? ?? {};
+            return AppPage.slide(state, OtpVerificationScreen(
+              nik: extra['nik'] ?? '',
+              purpose: extra['purpose'] ?? 'reset_password',
+            ));
+          },
+        ),
+        GoRoute(
+          path: '/change-password',
+          pageBuilder: (context, state) =>
+              AppPage.slide(state, const ChangePasswordScreen()),
+        ),
+        GoRoute(
+          path: '/change-pin',
+          pageBuilder: (context, state) =>
+              AppPage.slide(state, const ChangePinScreen()),
         ),
         ShellRoute(
           navigatorKey: _shellNavigatorKey,

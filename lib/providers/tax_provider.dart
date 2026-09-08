@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -142,7 +142,7 @@ class TaxProvider extends ChangeNotifier {
     required String nik,
     required String passwordConfirmation,
   }) async {
-    final data = await _api.post('/register', {
+    await _api.post('/register', {
       'nik': nik,
       'full_name': name,
       'email': email,
@@ -151,20 +151,8 @@ class TaxProvider extends ChangeNotifier {
       'password_confirmation': passwordConfirmation,
       'pin_number': pin,
     });
-
-    await _api.setToken(data['token'] as String);
-    _applyUser({
-      'id_user': data['user']?['id_user'],
-      'full_name': name,
-      'email': email,
-      'phone_number': phone,
-      'nik': nik,
-      'has_nop': false,
-      'has_npwpd': false,
-    });
-    _loggedIn = true;
-    await _persistUser();
-    notifyListeners();
+    // API backend tidak mereturn token saat register. 
+    // User harus diarahkan ke halaman login setelah registrasi berhasil.
   }
 
   Future<void> loginUser(String nik, String password) async {
@@ -181,6 +169,59 @@ class TaxProvider extends ChangeNotifier {
     _loggedIn = true;
     await _persistUser();
     await refreshDashboard();
+  }
+
+  Future<void> requestOtp(String nik, String purpose, String channel) async {
+    await _api.post('/otp/request', {
+      'nik': nik,
+      'purpose': purpose,
+      'channel': channel,
+    });
+  }
+
+  Future<void> verifyOtp(
+    String nik,
+    String purpose,
+    String code, {
+    String? newPassword,
+    String? newPasswordConfirmation,
+    String? newPin,
+  }) async {
+    final body = {
+      'nik': nik,
+      'purpose': purpose,
+      'code': code,
+    };
+    
+    if (newPassword != null) {
+      body['new_password'] = newPassword;
+      body['new_password_confirmation'] = newPasswordConfirmation ?? newPassword;
+    }
+    
+    if (newPin != null) {
+      body['new_pin'] = newPin;
+    }
+
+    await _api.post('/otp/verify', body);
+  }
+
+  Future<void> changePassword(String currentPassword, String newPassword, String newPasswordConfirmation) async {
+    await _api.post('/change-password', {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+      'new_password_confirmation': newPasswordConfirmation,
+    });
+    
+    // Automatically log out since token for other devices is revoked and this one might be too depending on logic
+    // But backend says "token lain otomatis logout". Current device token is kept.
+  }
+
+  Future<void> changePin(String currentPin, String newPin, String newPinConfirmation) async {
+    await _api.post('/change-pin', {
+      'current_pin': currentPin,
+      'new_pin': newPin,
+      'new_pin_confirmation': newPinConfirmation,
+    });
   }
 
   Future<void> logout() async {
