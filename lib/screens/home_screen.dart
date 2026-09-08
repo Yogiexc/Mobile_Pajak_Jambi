@@ -81,30 +81,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Image.asset('assets/images/logo.png', height: 40),
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.5),
-                              ),
-                              child: const Icon(Icons.notifications_rounded, color: AppColors.primaryDark),
-                            ),
-                            Positioned(
-                              top: -2,
-                              right: -2,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.yellowDark,
+                        InkWell(
+                          onTap: () => context.push('/notifications'),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
                                   shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.5),
                                 ),
-                                child: Text('2', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                                child: const Icon(Icons.notifications_rounded, color: AppColors.primaryDark),
                               ),
-                            ),
-                          ],
+                              if (taxProvider.unreadNotificationCount > 0)
+                                Positioned(
+                                  top: -2,
+                                  right: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.yellowDark,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      taxProvider.unreadNotificationCount > 9 ? '9+' : taxProvider.unreadNotificationCount.toString(),
+                                      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

@@ -182,7 +182,11 @@ class ProfileScreen extends StatelessWidget {
                                     );
                                   }),
                                   _buildMenuDivider(),
-                                  _buildMenuItem(Icons.notifications_none_outlined, 'Notifikasi'),
+                                  _buildMenuItem(
+                                    Icons.notifications_none_outlined,
+                                    'Notifikasi',
+                                    onTap: () => context.push('/notifications'),
+                                  ),
                                 ],
                               ),
                             ),
