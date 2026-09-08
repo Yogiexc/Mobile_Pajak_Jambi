@@ -29,6 +29,7 @@ import 'screens/privacy_policy_screen.dart';
 import 'screens/terms_screen.dart';
 import 'screens/other_taxes_screen.dart';
 import 'screens/pbb_list_screen.dart';
+import 'screens/notification_screen.dart';
 import 'utils/page_transitions.dart';
 import 'providers/tax_provider.dart';
 
@@ -112,6 +113,11 @@ class AppRouter {
               path: '/home',
               pageBuilder: (context, state) =>
                   AppPage.fade(state, const HomeScreen()),
+            ),
+            GoRoute(
+              path: '/notifications',
+              pageBuilder: (context, state) =>
+                  AppPage.fade(state, const NotificationScreen()),
             ),
             GoRoute(
               path: '/history',

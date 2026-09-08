@@ -84,6 +84,22 @@ class TaxTransaction {
   }
 }
 
+class TaxNotification {
+  final int id;
+  final String title;
+  final String message;
+  final bool isRead;
+  final DateTime sentAt;
+
+  TaxNotification({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.isRead,
+    required this.sentAt,
+  });
+}
+
 class LinkedBank {
   final int id;
   final String name;
@@ -112,6 +128,8 @@ class TaxProvider extends ChangeNotifier {
   final List<TaxTransaction> _history = [];
   final List<LinkedBank> _linkedBanks = [];
   final List<String> _nops = [];
+  final List<TaxNotification> _notifications = [];
+  int _unreadNotificationCount = 0;
 
   String? _npwpd;
   String? userName;
@@ -126,13 +144,15 @@ class TaxProvider extends ChangeNotifier {
   bool get isLoggedIn => _loggedIn;
   bool get isLoading => _loading;
   String? get npwpd => _npwpd;
-  List<String> get nops => _nops;
   bool get hasNpwpd => _npwpd != null;
   bool get hasNop => _nops.isNotEmpty;
   bool get needsOnboarding => _loggedIn && !_onboardingComplete;
-  List<TaxBill> get pendingBills => _pendingBills;
-  List<TaxTransaction> get history => _history;
-  List<LinkedBank> get linkedBanks => _linkedBanks;
+  List<TaxBill> get pendingBills => List.unmodifiable(_pendingBills);
+  List<TaxTransaction> get history => List.unmodifiable(_history);
+  List<LinkedBank> get linkedBanks => List.unmodifiable(_linkedBanks);
+  List<String> get nops => List.unmodifiable(_nops);
+  List<TaxNotification> get notifications => List.unmodifiable(_notifications);
+  int get unreadNotificationCount => _unreadNotificationCount;
 
   int get lunasCount => _history.where((t) => t.isSuccess).length;
   int get belumBayarCount => _pendingBills.length;
@@ -268,12 +288,25 @@ class TaxProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfile(String name, String email, String phone) {
-    userName = name;
-    userEmail = email;
-    userPhone = phone;
-    _persistUser();
-    notifyListeners();
+  Future<void> updateProfile(String name, String email, String phone) async {
+    try {
+      await _api.post('/profile', {
+        'full_name': name,
+        'email': email,
+        'phone_number': phone,
+      });
+      
+      userName = name;
+      userEmail = email;
+      userPhone = phone;
+      _persistUser();
+      notifyListeners();
+    } catch (e) {
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw const ApiException('Gagal memperbarui profil. Periksa koneksi internet Anda.');
+    }
   }
 
   Future<void> addLinkedBank({
@@ -408,6 +441,7 @@ class TaxProvider extends ChangeNotifier {
         _loadNpwpd(),
         _loadPaymentMethods(),
         _loadTransactions(),
+        _loadNotifications(),
       ]);
       if (!_onboardingComplete) {
         _onboardingComplete = _nops.isNotEmpty || _npwpd != null;
@@ -493,6 +527,50 @@ class TaxProvider extends ChangeNotifier {
       for (final item in data) {
         _history.add(_mapTransaction(item as Map<String, dynamic>));
       }
+    }
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final unreadData = await _api.get('/notifications/unread-count');
+      _unreadNotificationCount = ApiClient.unwrap(unreadData)['unread_count'] as int? ?? 0;
+
+      final data = ApiClient.unwrap(await _api.get('/notifications'));
+      _notifications.clear();
+      if (data is List) {
+        for (final item in data) {
+          final notif = item as Map<String, dynamic>;
+          _notifications.add(TaxNotification(
+            id: notif['id'] as int,
+            title: notif['title']?.toString() ?? 'Pemberitahuan',
+            message: notif['message']?.toString() ?? '',
+            isRead: (notif['is_read'] as bool?) ?? false,
+            sentAt: DateTime.tryParse(notif['sent_at']?.toString() ?? '') ?? DateTime.now(),
+          ));
+        }
+      }
+    } catch (e) {
+      // Ignored
+    }
+  }
+
+  Future<void> markAsRead(int id) async {
+    try {
+      await _api.post('/notifications/$id/read');
+      await _loadNotifications();
+      notifyListeners();
+    } catch (e) {
+      // Ignored
+    }
+  }
+
+  Future<void> markAllAsRead() async {
+    try {
+      await _api.post('/notifications/read-all');
+      await _loadNotifications();
+      notifyListeners();
+    } catch (e) {
+      // Ignored
     }
   }
 
