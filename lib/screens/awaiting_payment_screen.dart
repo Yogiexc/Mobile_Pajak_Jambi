@@ -18,7 +18,6 @@ class AwaitingPaymentScreen extends StatefulWidget {
 
 class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
   Timer? _pollTimer;
-  bool _checking = false;
 
   @override
   void initState() {
@@ -33,29 +32,10 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
   }
 
   Future<void> _checkStatus({bool fromButton = false}) async {
-    final tax = context.read<TaxProvider>();
-    final id = tax.lastTransaction?.id;
-    if (id == null || id.isEmpty || _checking) return;
-
-    setState(() => _checking = true);
-    try {
-      final tx = await tax.fetchTransaction(id);
-      if (!mounted) return;
-      if (tx.isSuccess) {
-        _pollTimer?.cancel();
-        context.go('/success');
-      } else if (tx.isFailed && fromButton) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pembayaran ${tx.statusLabel.toLowerCase()}.')),
-        );
-      }
-    } catch (e) {
-      if (!mounted || !fromButton) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _checking = false);
+    // DUMMY: Anggap saja transaksi sudah berhasil/dibayar
+    _pollTimer?.cancel();
+    if (mounted) {
+      context.go('/success');
     }
   }
 
@@ -211,7 +191,7 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _checking ? null : () => _checkStatus(fromButton: true),
+                  onPressed: () => _checkStatus(fromButton: true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryDark,
                     foregroundColor: Colors.white,
@@ -219,19 +199,13 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: _checking
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(
-                          'Cek Status Pembayaran',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                  child: Text(
+                    'Cek Status Pembayaran',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

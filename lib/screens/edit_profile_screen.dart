@@ -22,9 +22,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     final taxProvider = context.read<TaxProvider>();
-    _nameController = TextEditingController(text: taxProvider.userName ?? 'Dexa Wahnugrah');
-    _emailController = TextEditingController(text: taxProvider.userEmail ?? 'dexa@example.com');
-    _phoneController = TextEditingController(text: taxProvider.userPhone ?? '+62 812-3456-7890');
+    _nameController = TextEditingController(text: taxProvider.userName ?? '');
+    _emailController = TextEditingController(text: taxProvider.userEmail ?? '');
+    _phoneController = TextEditingController(text: taxProvider.userPhone ?? '');
   }
 
   @override
@@ -64,42 +64,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Stack(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.bgWhite,
-                      border: Border.all(
-                        color: AppColors.textHint.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                      image: const DecorationImage(
-                        image: AssetImage('assets/images/logo.png'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.person, size: 50, color: AppColors.primaryDark),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primaryDark,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
+
               _buildTextField('Nama Lengkap', _nameController),
               const SizedBox(height: 16),
               _buildTextField('Email', _emailController),
