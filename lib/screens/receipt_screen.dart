@@ -1,22 +1,36 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
+import 'package:share_plus/share_plus.dart';
 import '../constants/colors.dart';
 import '../providers/tax_provider.dart';
+import '../api/api_config.dart';
+import '../api/api_client.dart';
 
-class ReceiptScreen extends StatelessWidget {
+class ReceiptScreen extends StatefulWidget {
   final String transactionId;
 
   const ReceiptScreen({super.key, required this.transactionId});
+
+  @override
+  State<ReceiptScreen> createState() => _ReceiptScreenState();
+}
+
+class _ReceiptScreenState extends State<ReceiptScreen> {
+  bool _isDownloading = false;
 
   @override
   Widget build(BuildContext context) {
     final taxProvider = context.watch<TaxProvider>();
     TaxTransaction? transaction;
     for (final item in taxProvider.history) {
-      if (item.id == transactionId) {
+      if (item.id == widget.transactionId) {
         transaction = item;
         break;
       }
@@ -30,6 +44,8 @@ class ReceiptScreen extends StatelessWidget {
         body: const Center(child: Text('Transaksi tidak ditemukan')),
       );
     }
+    
+    final tx = transaction;
 
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID',
@@ -40,13 +56,19 @@ class ReceiptScreen extends StatelessWidget {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm:ss');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8), // Light grayish blue
+      backgroundColor: const Color(0xFFF0F4F8),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primaryDark),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
         ),
         title: Text(
           'Bukti Pembayaran',
@@ -94,7 +116,7 @@ class ReceiptScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          dateFormat.format(transaction.date),
+                          dateFormat.format(tx.date),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color: AppColors.textSecondary,
@@ -106,11 +128,11 @@ class ReceiptScreen extends StatelessWidget {
                   
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Divider(color: AppColors.textHint, thickness: 1), // In a real app we might use a dashed line
+                    child: Divider(color: AppColors.textHint, thickness: 1),
                   ),
 
                   _buildDetailRow('NPWPD', taxProvider.npwpd ?? 'P.2.0004913.01.009'),
-                  _buildDetailRow('Jenis Pajak', transaction.title),
+                  _buildDetailRow('Jenis Pajak', tx.title),
                   _buildDetailRow('Masa Pajak', '01/06/2026 S.D. 30/06/2026'),
                   _buildDetailRow('Kode Rekening', '4.1.1.19.04.001.00.00'),
                   
@@ -125,11 +147,11 @@ class ReceiptScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   
-                  _buildDetailRow('Tanggal Pembayaran', dateFormat.format(transaction.date)),
-                  _buildDetailRow('Penerima Pembayaran', transaction.bankName.toUpperCase()),
-                  _buildDetailRow('Referensi Bank', transaction.id.replaceAll('-', '')),
-                  _buildDetailRow('Pembayaran Pajak', currencyFormatter.format(transaction.amount)),
-                  _buildDetailRow('Sanksi/Bunga', currencyFormatter.format(transaction.denda)),
+                  _buildDetailRow('Tanggal Pembayaran', dateFormat.format(tx.date)),
+                  _buildDetailRow('Penerima Pembayaran', tx.bankName.toUpperCase()),
+                  _buildDetailRow('Referensi Bank', tx.id.replaceAll('-', '')),
+                  _buildDetailRow('Pembayaran Pajak', currencyFormatter.format(tx.amount)),
+                  _buildDetailRow('Sanksi/Bunga', currencyFormatter.format(tx.denda)),
                   
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
@@ -148,7 +170,7 @@ class ReceiptScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        currencyFormatter.format(transaction.amount + transaction.denda),
+                        currencyFormatter.format(tx.amount + tx.denda),
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -167,13 +189,49 @@ class ReceiptScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Bukti pembayaran berhasil diunduh')),
-                      );
+                    onPressed: _isDownloading ? null : () async {
+                      setState(() => _isDownloading = true);
+                      try {
+                        final url = Uri.parse('${ApiConfig.baseUrl}/transactions/${tx.id}/proof');
+                        final response = await http.get(url, headers: {
+                          'Authorization': 'Bearer ${ApiClient.instance.token}',
+                          'Accept': 'application/pdf',
+                        });
+                        
+                        if (response.statusCode == 200) {
+                          final dir = await getApplicationDocumentsDirectory();
+                          final file = File('${dir.path}/Bukti_Pembayaran_${tx.id}.pdf');
+                          await file.writeAsBytes(response.bodyBytes);
+                          
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Berhasil diunduh! Membuka file...')),
+                            );
+                          }
+                          await OpenFile.open(file.path);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Gagal mengunduh bukti pembayaran')),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Terjadi kesalahan saat mengunduh')),
+                          );
+                        }
+                      } finally {
+                        if (context.mounted) {
+                          setState(() => _isDownloading = false);
+                        }
+                      }
                     },
-                    icon: const Icon(Icons.download_rounded),
-                    label: const Text('Unduh'),
+                    icon: _isDownloading 
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.download_rounded),
+                    label: Text(_isDownloading ? 'Mengunduh...' : 'Unduh'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryBlue,
                       side: const BorderSide(color: AppColors.primaryBlue),
@@ -187,10 +245,11 @@ class ReceiptScreen extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Membuka menu bagikan...')),
-                      );
+                    onPressed: () async {
+                      final downloadUrl = '${ApiConfig.baseUrl}/transactions/${tx.id}/proof';
+                      final text = 'Bukti Pembayaran Pajak\nNo: ${tx.id}\nTanggal: ${dateFormat.format(tx.date)}\nTotal: ${currencyFormatter.format(tx.amount + tx.denda)}\nUnduh: $downloadUrl';
+                      // Await the share process to prevent it from getting stuck
+                      await Share.share(text);
                     },
                     icon: const Icon(Icons.share_rounded),
                     label: const Text('Bagikan'),

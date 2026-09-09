@@ -49,26 +49,13 @@ class ProfileScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(color: Colors.white, width: 2),
-                            image: const DecorationImage(
-                              image: AssetImage('assets/images/logo.png'), 
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
+
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                taxProvider.userName ?? 'Akun Dummy',
+                                taxProvider.userName ?? 'Akun Pengguna',
                                 style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -303,13 +290,13 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           _buildMenuDivider(),
-          _buildInfoRow(Icons.person_outline, 'Nama Lengkap', taxProvider.userName ?? 'Akun Dummy'),
+          _buildInfoRow(Icons.person_outline, 'Nama Lengkap', taxProvider.userName ?? '-'),
           _buildMenuDivider(),
           _buildInfoRow(Icons.badge_outlined, 'NIK', '317402120***0001'),
           _buildMenuDivider(),
-          _buildInfoRow(Icons.phone_outlined, 'No. HP', taxProvider.userPhone ?? '0812-3456-7890'),
+          _buildInfoRow(Icons.phone_outlined, 'No. HP', taxProvider.userPhone ?? '-'),
           _buildMenuDivider(),
-          _buildInfoRow(Icons.email_outlined, 'Email', taxProvider.userEmail ?? 'bryan@email.com'),
+          _buildInfoRow(Icons.email_outlined, 'Email', taxProvider.userEmail ?? '-'),
           const SizedBox(height: 8),
         ],
       ),
