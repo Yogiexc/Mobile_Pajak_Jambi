@@ -249,7 +249,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       final downloadUrl = '${ApiConfig.baseUrl}/transactions/${tx.id}/proof';
                       final text = 'Bukti Pembayaran Pajak\nNo: ${tx.id}\nTanggal: ${dateFormat.format(tx.date)}\nTotal: ${currencyFormatter.format(tx.amount + tx.denda)}\nUnduh: $downloadUrl';
                       // Await the share process to prevent it from getting stuck
-                      await Share.share(text);
+                      await SharePlus.instance.share(ShareParams(text: text));
                     },
                     icon: const Icon(Icons.share_rounded),
                     label: const Text('Bagikan'),
