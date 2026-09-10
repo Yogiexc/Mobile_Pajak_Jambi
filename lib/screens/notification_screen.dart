@@ -14,6 +14,15 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   @override
+  void initState() {
+    super.initState();
+    // Load fresh notifications from API when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TaxProvider>().loadNotifications();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,

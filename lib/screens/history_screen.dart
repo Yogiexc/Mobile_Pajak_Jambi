@@ -95,9 +95,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     List<TaxTransaction> filteredHistory = taxProvider.history.where((tx) {
       bool passType = true;
       if (_selectedTaxType == 'Pajak PBB') {
-        passType = tx.title == 'Pajak PBB';
+        // Backend kirim tax_type_label: "PBB-P2" untuk semua jenis PBB
+        passType = tx.title.toUpperCase().contains('PBB');
       } else if (_selectedTaxType == 'Pajak Lainnya') {
-        passType = tx.title != 'Pajak PBB';
+        passType = !tx.title.toUpperCase().contains('PBB');
       }
       
       bool passDate = tx.date.isAfter(cutoffDate);
@@ -457,9 +458,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     color: AppColors.primaryDark,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
+                // Tampilkan nama objek pajak jika ada
+                if (item.namaObjek.isNotEmpty && item.namaObjek != '-')
+                  Text(
+                    item.namaObjek,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryDark.withValues(alpha: 0.7),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                const SizedBox(height: 2),
                 Text(
-                  '${item.taxId} - ${item.bankName}', // Adjust text logic based on real data
+                  item.bankName,
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: AppColors.textSecondary,
