@@ -90,7 +90,12 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
       }
       if (!mounted) return;
       setState(() {
-        _addedTaxes.add({'type': _selectedConfig.title, 'taxId': taxId});
+        final namaObjek = isNpwpd ? preview['business_name']?.toString() : preview['object_name']?.toString();
+        _addedTaxes.add({
+          'type': _selectedConfig.title, 
+          'taxId': taxId,
+          'namaObjek': namaObjek ?? '',
+        });
         _taxIdController.clear();
         _isLoading = false;
       });
@@ -347,11 +352,21 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
                                           Text(
                                             item['type']!,
                                             style: GoogleFonts.inter(
-                                              fontSize: 12,
+                                              fontSize: 10,
                                               fontWeight: FontWeight.w600,
-                                              color: AppColors.primaryDark,
+                                              color: AppColors.primaryBlue,
                                             ),
                                           ),
+                                          const SizedBox(height: 2),
+                                          if (item['namaObjek'] != null && item['namaObjek']!.isNotEmpty)
+                                            Text(
+                                              item['namaObjek']!,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.primaryDark,
+                                              ),
+                                            ),
                                           Text(
                                             '${config.inputLabel.split('(').first.trim()}: ${item['taxId']!}',
                                             style: GoogleFonts.inter(

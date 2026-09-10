@@ -48,7 +48,16 @@ class PbbListScreen extends StatelessWidget {
         ),
         child: SafeArea(
         child: nops.isEmpty
-            ? _buildEmptyState(context)
+            ? RefreshIndicator(
+                onRefresh: () => taxProvider.refreshDashboard(),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.8,
+                    child: _buildEmptyState(context),
+                  ),
+                ),
+              )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -75,17 +84,19 @@ class PbbListScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(24.0),
-                      itemCount: nops.length,
-                      itemBuilder: (context, index) {
+                    child: RefreshIndicator(
+                      onRefresh: () => taxProvider.refreshDashboard(),
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(24.0),
+                        itemCount: nops.length,
+                        itemBuilder: (context, index) {
                         final nop = nops[index];
                         
-                        // Find if there is a pending bill for this NOP
-                        final pendingBill = taxProvider.pendingBills.cast<TaxBill?>().firstWhere(
-                          (b) => b!.taxId == nop && b.title == 'Pajak PBB',
-                          orElse: () => null,
-                        );
+                        // Find all pending bills for this NOP
+                        final pendingBills = taxProvider.pendingBills.where(
+                          (b) => b.taxId == nop && b.title == 'Pajak PBB'
+                        ).toList();
                         
                         // Find if there is a paid history for this NOP
                         final historyTx = taxProvider.history.cast<TaxTransaction?>().firstWhere(
@@ -93,19 +104,19 @@ class PbbListScreen extends StatelessWidget {
                           orElse: () => null,
                         );
 
-                        bool hasTagihan = pendingBill != null;
+                        bool hasTagihan = pendingBills.isNotEmpty;
                         bool lunas = historyTx != null && !hasTagihan; // If it has a tagihan, prioritize that.
 
-                        String statusText = hasTagihan ? 'Ada Tagihan' : (lunas ? 'Sudah Dibayar' : 'Tidak Ada Data');
+                        String statusText = hasTagihan ? '${pendingBills.length} Tagihan Belum Dibayar' : (lunas ? 'Sudah Dibayar' : 'Tidak Ada Data');
                         Color statusColor = hasTagihan ? Colors.red : (lunas ? AppColors.success : Colors.grey);
                         
-                        String objName = hasTagihan ? pendingBill.namaObjek : (lunas ? historyTx.namaObjek : 'Objek PBB');
-                        double amount = hasTagihan ? pendingBill.amount + pendingBill.denda : 0;
-                        DateTime? dueDate = hasTagihan ? pendingBill.dueDate : null;
+                        String objName = hasTagihan ? pendingBills.first.namaObjek : (lunas ? historyTx.namaObjek : 'Objek PBB');
+                        double amount = hasTagihan ? pendingBills.fold(0, (sum, b) => sum + b.total) : 0;
+                        DateTime? dueDate = hasTagihan ? pendingBills.first.dueDate : null;
 
                         return InkWell(
                           onTap: hasTagihan ? () {
-                            context.push('/detail', extra: pendingBill.id);
+                            context.push('/tax-detail');
                           } : (lunas ? () {
                             context.push('/receipt', extra: historyTx.id);
                           } : null),
@@ -238,7 +249,8 @@ class PbbListScreen extends StatelessWidget {
                       },
                     ),
                   ),
-                ],
+                ),
+              ],
               ),
         ),
       ),

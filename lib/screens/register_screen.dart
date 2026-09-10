@@ -68,11 +68,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         nik: _nikController.text.trim(),
         passwordConfirmation: _confirmPasswordController.text,
       );
+      
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Akun berhasil dibuat! Silakan login.'), backgroundColor: AppColors.success),
+        const SnackBar(content: Text('Akun berhasil dibuat! Memuat...'), backgroundColor: AppColors.success),
       );
-      context.go('/login');
+
+      // Auto-login after successful registration
+      await context.read<TaxProvider>().loginUser(
+        _nikController.text.trim(), 
+        _passwordController.text
+      );
+      
+      // We do not need context.go('/register-nop') because GoRouter will automatically redirect
+      // once loginUser completes and updates tax.isLoggedIn and tax.isLoading.
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

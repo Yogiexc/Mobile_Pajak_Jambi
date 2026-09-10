@@ -133,6 +133,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
                   _buildDetailRow('NPWPD', taxProvider.npwpd ?? 'P.2.0004913.01.009'),
                   _buildDetailRow('Jenis Pajak', tx.title),
+                  if (tx.namaObjek.isNotEmpty && tx.namaObjek != '-')
+                    _buildDetailRow('Objek Pajak', tx.namaObjek),
                   _buildDetailRow('Masa Pajak', '01/06/2026 S.D. 30/06/2026'),
                   _buildDetailRow('Kode Rekening', '4.1.1.19.04.001.00.00'),
                   
@@ -149,8 +151,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   
                   _buildDetailRow('Tanggal Pembayaran', dateFormat.format(tx.date)),
                   _buildDetailRow('Penerima Pembayaran', tx.bankName.toUpperCase()),
-                  _buildDetailRow('Referensi Bank', tx.id.replaceAll('-', '')),
-                  _buildDetailRow('Pembayaran Pajak', currencyFormatter.format(tx.amount)),
+                  _buildDetailRow('Referensi Bank', tx.transactionRef.isNotEmpty ? tx.transactionRef : tx.id),
+                  // tx.amount sudah include denda dari API, jadi pokok = amount - denda
+                  _buildDetailRow('Pembayaran Pajak', currencyFormatter.format(tx.amount - tx.denda)),
                   _buildDetailRow('Sanksi/Bunga', currencyFormatter.format(tx.denda)),
                   
                   const Padding(
@@ -170,7 +173,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                         ),
                       ),
                       Text(
-                        currencyFormatter.format(tx.amount + tx.denda),
+                        // tx.amount sudah include denda — tidak perlu tambah lagi
+                        currencyFormatter.format(tx.amount),
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -248,6 +252,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     onPressed: () async {
                       final downloadUrl = '${ApiConfig.baseUrl}/transactions/${tx.id}/proof';
                       final text = 'Bukti Pembayaran Pajak\nNo: ${tx.id}\nTanggal: ${dateFormat.format(tx.date)}\nTotal: ${currencyFormatter.format(tx.amount + tx.denda)}\nUnduh: $downloadUrl';
+                      // ignore: deprecated_member_use
                       await Share.share(text);
                     },
                     icon: const Icon(Icons.share_rounded),

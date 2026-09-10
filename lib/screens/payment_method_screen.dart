@@ -20,6 +20,16 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   String _paymentChannel = '';
   String? _bankCode;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<TaxProvider>().loadPaymentMethods();
+      }
+    });
+  }
+
   void _selectChannel({
     required String name,
     required String channel,
