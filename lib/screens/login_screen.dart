@@ -121,6 +121,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _nikController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           keyboardType: TextInputType.number,
                           maxLength: 16,
                           decoration: const InputDecoration(
@@ -142,6 +145,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: 'Masukkan kata sandi',

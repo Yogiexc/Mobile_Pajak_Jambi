@@ -186,6 +186,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _nikController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           keyboardType: TextInputType.number,
                           maxLength: 16,
                           decoration: const InputDecoration(
@@ -244,6 +247,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: 'Minimal 8 karakter',
@@ -274,6 +280,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _confirmPasswordController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           obscureText: _obscureConfirm,
                           decoration: InputDecoration(
                             hintText: 'Ulangi kata sandi',
@@ -304,6 +313,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _pinController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           obscureText: true,
                           keyboardType: TextInputType.number,
                           maxLength: 6,

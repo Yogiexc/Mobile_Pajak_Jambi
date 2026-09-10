@@ -35,12 +35,21 @@ class _PinScreenState extends State<PinScreen> {
     }
   }
 
+  bool _isSubmitting = false;
+
   void _submitPin() {
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+
     final pin = _pin;
     setState(() => _pin = '');
     context.push('/processing', extra: {
       ...widget.paymentArgs,
       'pin': pin,
+    }).then((_) {
+      if (mounted) {
+        _isSubmitting = false;
+      }
     });
   }
 

@@ -20,14 +20,33 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
   Timer? _pollTimer;
   bool _isChecking = false;
   bool _isSimulating = false;
+  
+  int _pollCount = 0;
+  final int _maxPolls = 15;
+  Duration _pollInterval = const Duration(seconds: 4);
 
   @override
   void initState() {
     super.initState();
-    _pollTimer = Timer.periodic(
-      const Duration(seconds: 4),
-      (_) => _checkStatus(),
-    );
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(_pollInterval, (_) {
+      _pollCount++;
+      _checkStatus();
+
+      if (_pollCount >= _maxPolls) {
+        _pollTimer?.cancel();
+      } else if (_pollCount == 5) {
+        _pollInterval = const Duration(seconds: 8);
+        _startPolling();
+      } else if (_pollCount == 10) {
+        _pollInterval = const Duration(seconds: 15);
+        _startPolling();
+      }
+    });
   }
 
   @override

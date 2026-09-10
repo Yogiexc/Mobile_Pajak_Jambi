@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,8 +9,14 @@ import '../constants/colors.dart';
 class OtpVerificationScreen extends StatefulWidget {
   final String nik;
   final String purpose;
+  final String channel;
 
-  const OtpVerificationScreen({super.key, required this.nik, required this.purpose});
+  const OtpVerificationScreen({
+    super.key,
+    required this.nik,
+    required this.purpose,
+    this.channel = 'email',
+  });
 
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
@@ -25,13 +32,65 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   bool _obscureConfirm = true;
   bool _isLoading = false;
 
+  Timer? _timer;
+  int _countdown = 60;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
   @override
   void dispose() {
+    _timer?.cancel();
     _otpController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     _newPinController.dispose();
     super.dispose();
+  }
+
+  void _startTimer() {
+    setState(() => _countdown = 60);
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown > 0) {
+        setState(() => _countdown--);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _handleResendOtp() async {
+    setState(() => _isLoading = true);
+    try {
+      final otpCode = await context.read<TaxProvider>().requestOtp(
+        widget.nik,
+        widget.purpose,
+        widget.channel,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            otpCode != null
+                ? 'Kode OTP (dummy): $otpCode'
+                : 'Kode OTP berhasil dikirim ulang.',
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      _startTimer();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _handleVerifyOtp() async {
@@ -139,7 +198,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Kode OTP telah dikirim. Cek log server/email/sms Anda (berlaku 5 menit).',
+                'Kode OTP telah dikirim ke ${widget.channel}. Cek kotak masuk Anda.',
                 style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 24),
@@ -182,6 +241,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   child: _isLoading
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : Text('Verifikasi & Simpan', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: TextButton(
+                  onPressed: (_countdown > 0 || _isLoading) ? null : _handleResendOtp,
+                  child: Text(
+                    _countdown > 0 
+                      ? 'Kirim ulang OTP dalam $_countdown detik' 
+                      : 'Kirim Ulang OTP',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _countdown > 0 ? AppColors.textHint : AppColors.primary,
+                    ),
+                  ),
                 ),
               ),
             ],

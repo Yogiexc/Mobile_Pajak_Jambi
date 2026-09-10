@@ -49,11 +49,17 @@ class AppRouter {
         if (!tax.isLoggedIn && !_publicRoutes.contains(loc)) {
           return '/login';
         }
-        if (tax.isLoggedIn && (loc == '/login' || loc == '/register')) {
-          return tax.needsOnboarding ? '/register-nop' : '/home';
-        }
-        if (tax.isLoggedIn && loc == '/') {
-          return '/home';
+        
+        if (tax.isLoggedIn) {
+          if (tax.isLoading) {
+            // Prevent redirecting during loading to avoid race conditions
+            // where needsOnboarding is evaluated before data is fetched.
+            return null;
+          }
+
+          if (loc == '/login' || loc == '/register' || loc == '/') {
+            return tax.needsOnboarding ? '/register-nop' : '/home';
+          }
         }
         return null;
       },
@@ -92,6 +98,7 @@ class AppRouter {
             return AppPage.slide(state, OtpVerificationScreen(
               nik: extra['nik'] ?? '',
               purpose: extra['purpose'] ?? 'reset_password',
+              channel: extra['channel'] ?? 'email',
             ));
           },
         ),

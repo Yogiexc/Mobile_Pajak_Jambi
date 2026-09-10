@@ -111,6 +111,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
   }
 
   void _finishSetup() {
+    context.read<TaxProvider>().completeOnboarding();
     context.go('/home');
   }
 
@@ -122,6 +123,9 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TaxProvider>();
+    final canFinish = provider.hasNop || provider.hasNpwpd;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -390,7 +394,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _finishSetup,
+                      onPressed: canFinish ? _finishSetup : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDark,
                         foregroundColor: Colors.white,

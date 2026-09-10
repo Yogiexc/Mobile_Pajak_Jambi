@@ -54,6 +54,7 @@ class _ForgotAuthScreenState extends State<ForgotAuthScreen> {
       context.push('/otp-verification', extra: {
         'nik': _nikController.text.trim(),
         'purpose': widget.purpose,
+        'channel': _selectedChannel,
       });
     } catch (e) {
       if (!mounted) return;

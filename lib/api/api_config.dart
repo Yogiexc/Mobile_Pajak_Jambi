@@ -6,29 +6,15 @@ class ApiConfig {
     const override = String.fromEnvironment('API_BASE_URL');
     if (override.isNotEmpty) return override;
 
-    if (kIsWeb) return 'http://127.0.0.1:8000/api';
-
-    // Android emulator → host machine
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000/api';
+    if (kDebugMode) {
+      if (kIsWeb) return 'http://127.0.0.1:8000/api';
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        return 'http://10.0.2.2:8000/api';
+      }
+      return 'http://127.0.0.1:8000/api';
     }
 
+    // Default untuk produksi:
     return 'http://127.0.0.1:8000/api';
   }
 }
-
-/* 
-import 'package:flutter/foundation.dart';
-
-class ApiConfig {
-  /// Override saat run/build, contoh untuk testing lokal:
-  /// `--dart-define=API_BASE_URL=http://192.168.x.x:8000/api`
-  static String get baseUrl {
-    const override = String.fromEnvironment('API_BASE_URL');
-    if (override.isNotEmpty) return override;
-
-    // Default: backend produksi di VPS.
-    return 'https://api-pajakjambi.namadomain.com/api';
-  }
-}
-*/

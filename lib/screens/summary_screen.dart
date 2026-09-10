@@ -7,7 +7,7 @@ import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
 
-class SummaryScreen extends StatelessWidget {
+class SummaryScreen extends StatefulWidget {
   final String? billId;
   final int? paymentId;
   final String bankName;
@@ -26,6 +26,13 @@ class SummaryScreen extends StatelessWidget {
   });
 
   @override
+  State<SummaryScreen> createState() => _SummaryScreenState();
+}
+
+class _SummaryScreenState extends State<SummaryScreen> {
+  bool _isSubmitting = false;
+
+  @override
   Widget build(BuildContext context) {
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID',
@@ -36,7 +43,7 @@ class SummaryScreen extends StatelessWidget {
     // Get bill from provider
     final taxProvider = context.watch<TaxProvider>();
     final bill = taxProvider.pendingBills.cast<TaxBill?>().firstWhere(
-      (b) => b?.id == billId, 
+      (b) => b?.id == widget.billId, 
       orElse: () => taxProvider.pendingBills.isNotEmpty ? taxProvider.pendingBills.first : null
     );
 
@@ -146,7 +153,7 @@ class SummaryScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        isQris ? Icons.qr_code_2 : Icons.account_balance,
+                        widget.isQris ? Icons.qr_code_2 : Icons.account_balance,
                         color: AppColors.primaryBlue,
                         size: 20,
                       ),
@@ -157,7 +164,7 @@ class SummaryScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            bankName,
+                            widget.bankName,
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -195,14 +202,19 @@ class SummaryScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: _isSubmitting ? null : () {
+                    setState(() => _isSubmitting = true);
                     context.push('/pin', extra: {
                       'billId': bill.id,
-                      'paymentId': paymentId,
-                      'bankName': bankName,
-                      'isQris': isQris,
-                      'paymentChannel': paymentChannel,
-                      'bankCode': bankCode,
+                      'paymentId': widget.paymentId,
+                      'bankName': widget.bankName,
+                      'isQris': widget.isQris,
+                      'paymentChannel': widget.paymentChannel,
+                      'bankCode': widget.bankCode,
+                    }).then((_) {
+                      if (mounted) {
+                        setState(() => _isSubmitting = false);
+                      }
                     });
                   },
                   style: ElevatedButton.styleFrom(
@@ -213,13 +225,19 @@ class SummaryScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    'Bayar Sekarang - ${currencyFormatter.format(bill.total)}',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Text(
+                        'Bayar Sekarang - ${currencyFormatter.format(bill.total)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                 ),
               ),
               const SizedBox(height: 12),

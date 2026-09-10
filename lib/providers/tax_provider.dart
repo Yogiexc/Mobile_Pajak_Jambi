@@ -154,6 +154,15 @@ class TaxProvider extends ChangeNotifier {
   List<TaxNotification> get notifications => List.unmodifiable(_notifications);
   int get unreadNotificationCount => _unreadNotificationCount;
 
+  Future<void> completeOnboarding() async {
+    _onboardingComplete = true;
+    if (userNik != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_skipped_$userNik', true);
+    }
+    notifyListeners();
+  }
+
   int get lunasCount => _history.where((t) => t.isSuccess).length;
   int get belumBayarCount => _pendingBills.length;
   double get totalTerbayar => _history
@@ -292,6 +301,7 @@ class TaxProvider extends ChangeNotifier {
   Future<void> updateProfile(String name, String email, String phone) async {
     try {
       await _api.post('/profile', {
+        '_method': 'POST',
         'full_name': name,
         'email': email,
         'phone_number': phone,
@@ -362,14 +372,32 @@ class TaxProvider extends ChangeNotifier {
   }
 
   Future<void> addNpwpd(String npwpd) async {
-    await _api.post('/npwpd', {'npwpd_number': npwpd.trim()});
-    await refreshDashboard();
+    _loading = true;
+    notifyListeners();
+    try {
+      await _api.post('/npwpd', {'npwpd_number': npwpd.trim()});
+      await _loadNpwpd();
+      if (!_onboardingComplete) _onboardingComplete = _nops.isNotEmpty || _npwpd != null;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> addNop(String nop) async {
-    await _api.post('/nops', {'nop_number': nop.trim()});
-    await refreshDashboard();
+    _loading = true;
+    notifyListeners();
+    try {
+      await _api.post('/nops', {'nop_number': nop.trim()});
+      await _loadNops();
+      if (!_onboardingComplete) _onboardingComplete = _nops.isNotEmpty || _npwpd != null;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
+
+
 
   Future<void> addBill(String taxId, String serviceName) async {
     final lower = serviceName.toLowerCase();
@@ -415,7 +443,31 @@ class TaxProvider extends ChangeNotifier {
       fallbackBank: bankName,
       fallbackQris: paymentChannel == 'qris',
     );
-    await refreshDashboard();
+    
+    // Partial refresh
+    _loading = true;
+    notifyListeners();
+    try {
+      final bill = _pendingBills.cast<TaxBill?>().firstWhere((b) => b?.id == billId, orElse: () => null);
+      
+      final futures = <Future>[_loadTransactions()];
+      if (bill != null) {
+        if (bill.title == 'Pajak PBB') {
+          futures.add(_loadNops());
+        } else {
+          futures.add(_loadNpwpd());
+        }
+      } else {
+        futures.add(_loadNops());
+        futures.add(_loadNpwpd());
+      }
+      
+      await Future.wait(futures);
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+    
     return lastTransaction!;
   }
 
@@ -458,6 +510,10 @@ class TaxProvider extends ChangeNotifier {
       ]);
       if (!_onboardingComplete) {
         _onboardingComplete = _nops.isNotEmpty || _npwpd != null;
+        if (!_onboardingComplete && userNik != null) {
+          final prefs = await SharedPreferences.getInstance();
+          _onboardingComplete = prefs.getBool('onboarding_skipped_$userNik') ?? false;
+        }
       }
     } finally {
       _loading = false;
@@ -479,6 +535,7 @@ class TaxProvider extends ChangeNotifier {
   Future<void> _loadNops() async {
     final data = ApiClient.unwrap(await _api.get('/nops'));
     _nops.clear();
+    _pendingBills.removeWhere((b) => b.title == 'Pajak PBB');
 
     if (data is List) {
       for (final item in data) {
@@ -499,6 +556,7 @@ class TaxProvider extends ChangeNotifier {
     final raw = await _api.get('/npwpd');
     final data = ApiClient.unwrap(raw);
     _npwpd = null;
+    _pendingBills.removeWhere((b) => b.title != 'Pajak PBB');
 
     final map = _asMap(data);
     if (map != null) {
@@ -546,9 +604,12 @@ class TaxProvider extends ChangeNotifier {
   Future<void> _loadNotifications() async {
     try {
       final unreadData = await _api.get('/notifications/unread-count');
-      _unreadNotificationCount =
-          ApiClient.unwrap(unreadData)['unread_count'] as int? ?? 0;
+      _unreadNotificationCount = ApiClient.unwrap(unreadData)['unread_count'] as int? ?? 0;
+    } catch (e) {
+      debugPrint('Failed to load unread count: $e');
+    }
 
+    try {
       final data = ApiClient.unwrap(await _api.get('/notifications'));
       _notifications.clear();
       if (data is List) {
@@ -560,15 +621,13 @@ class TaxProvider extends ChangeNotifier {
               title: notif['title']?.toString() ?? 'Pemberitahuan',
               message: notif['message']?.toString() ?? '',
               isRead: (notif['is_read'] as bool?) ?? false,
-              sentAt:
-                  DateTime.tryParse(notif['sent_at']?.toString() ?? '') ??
-                  DateTime.now(),
+              sentAt: DateTime.tryParse(notif['sent_at']?.toString() ?? '') ?? DateTime.now(),
             ),
           );
         }
       }
     } catch (e) {
-      // Ignored
+      debugPrint('Failed to load notifications: $e');
     }
   }
 

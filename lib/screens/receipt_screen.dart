@@ -212,14 +212,14 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                         } else {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Gagal mengunduh bukti pembayaran')),
+                              SnackBar(content: Text('Gagal mengunduh bukti pembayaran (Status: ${response.statusCode})')),
                             );
                           }
                         }
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Terjadi kesalahan saat mengunduh')),
+                            SnackBar(content: Text('Terjadi kesalahan: $e')),
                           );
                         }
                       } finally {
@@ -248,8 +248,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     onPressed: () async {
                       final downloadUrl = '${ApiConfig.baseUrl}/transactions/${tx.id}/proof';
                       final text = 'Bukti Pembayaran Pajak\nNo: ${tx.id}\nTanggal: ${dateFormat.format(tx.date)}\nTotal: ${currencyFormatter.format(tx.amount + tx.denda)}\nUnduh: $downloadUrl';
-                      // Await the share process to prevent it from getting stuck
-                      await SharePlus.instance.share(ShareParams(text: text));
+                      await Share.share(text);
                     },
                     icon: const Icon(Icons.share_rounded),
                     label: const Text('Bagikan'),

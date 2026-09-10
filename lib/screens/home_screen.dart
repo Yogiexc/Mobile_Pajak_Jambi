@@ -16,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController();
-  int _currentCardIndex = 0;
 
   @override
   void dispose() {
@@ -137,50 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 24),
                 
                 if (taxProvider.pendingBills.isNotEmpty)
-                  Column(
-                    children: [
-                      SizedBox(
-                        height: 220,
-                        child: PageView.builder(
-                          controller: _pageController,
-                          onPageChanged: (index) {
-                            setState(() {
-                              _currentCardIndex = index;
-                            });
-                          },
-                          itemCount: taxProvider.pendingBills.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                right: taxProvider.pendingBills.length > 1 ? 8.0 : 0.0, 
-                                left: taxProvider.pendingBills.length > 1 && index > 0 ? 8.0 : 0.0
-                              ),
-                              child: _buildMainCard(context, taxProvider.pendingBills[index], currencyFormatter),
-                            );
-                          },
-                        ),
-                      ),
-                      if (taxProvider.pendingBills.length > 1)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              taxProvider.pendingBills.length,
-                              (index) => Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: _currentCardIndex == index ? 16 : 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                color: _currentCardIndex == index ? AppColors.yellowDark : AppColors.textHint.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  )
+                  _buildMainCard(context, taxProvider, currencyFormatter)
                 else
                   _buildEmptyCard(context),
                 
@@ -556,8 +512,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMainCard(BuildContext context, TaxBill bill, NumberFormat formatter) {
-    final unpaidCount = context.watch<TaxProvider>().belumBayarCount;
+  Widget _buildMainCard(BuildContext context, TaxProvider provider, NumberFormat formatter) {
+    final unpaidCount = provider.belumBayarCount;
+    final totalAmount = provider.pendingBills.fold(0.0, (sum, bill) => sum + bill.total);
 
     return Container(
       width: double.infinity,
@@ -585,7 +542,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Icon(Icons.description, color: Colors.white, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Pajak Saya',
+                    'Total Tagihan Saya',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -633,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          formatter.format(bill.amount),
+                          formatter.format(totalAmount),
                           style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
@@ -646,7 +603,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () => context.push('/detail', extra: bill.id),
+                  onPressed: () {
+                    // Navigate to PBB list if all are PBB, otherwise just go to PBB list for now 
+                    // since we are combining them. Or show bottom sheet.
+                    _showTagihanOptions(context, provider);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.yellowDark,
                     foregroundColor: AppColors.primaryDark,
@@ -660,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Lihat Tagihan',
+                        'Lihat Detail',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -676,6 +637,125 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showTagihanOptions(BuildContext context, TaxProvider provider) {
+    // If only one type of tax exists, or we want to show a bottom sheet grouping by tax id.
+    // Let's create a bottom sheet to show the unpaid bills by NOP/NPWPD
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.only(top: 24, bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pilih Tagihan',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  itemCount: provider.pendingBills.length,
+                  itemBuilder: (context, index) {
+                    final bill = provider.pendingBills[index];
+                    final currencyFormatter = NumberFormat.currency(
+                      locale: 'id_ID',
+                      symbol: 'Rp ',
+                      decimalDigits: 0,
+                    );
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgWhite,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.2)),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        title: Text(
+                          bill.title,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(
+                              'ID: ${bill.taxId}',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              currencyFormatter.format(bill.total),
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.danger,
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            context.push('/detail', extra: bill.id);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryDark,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Bayar'),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
