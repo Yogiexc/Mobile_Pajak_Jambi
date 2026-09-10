@@ -68,6 +68,8 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
 
       if (updated.isSuccess) {
         _pollTimer?.cancel();
+        // Refresh data di background setelah navigasi
+        provider.refreshAfterPayment();
         context.go('/success');
       } else if (updated.isFailed) {
         _pollTimer?.cancel();
@@ -95,8 +97,14 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
 
     setState(() => _isSimulating = true);
     try {
+      // simulatePayment sudah dapat data sukses dari backend
+      // langsung update state & redirect tanpa perlu fetchTransaction lagi
       await provider.simulatePayment(tx.id);
-      await _checkStatus(fromButton: true);
+      if (!mounted) return;
+      _pollTimer?.cancel();
+      // Refresh data di background, tidak blocking navigasi
+      provider.refreshAfterPayment();
+      context.go('/success');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

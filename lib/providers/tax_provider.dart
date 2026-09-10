@@ -167,7 +167,7 @@ class TaxProvider extends ChangeNotifier {
   int get belumBayarCount => _pendingBills.length;
   double get totalTerbayar => _history
       .where((t) => t.isSuccess)
-      .fold(0, (sum, t) => sum + t.amount + t.denda);
+      .fold(0, (sum, t) => sum + t.amount); // amount dari API sudah include denda
 
   Future<void> bootstrap() async {
     await _api.init();
@@ -222,7 +222,13 @@ class TaxProvider extends ChangeNotifier {
     _applyUser({...?_asMap(data['user']), 'nik': nik});
     _loggedIn = true;
     await _persistUser();
-    await refreshDashboard();
+    // Cek onboarding dari data login (tanpa perlu API call extra)
+    final hasNop = data['user']?['has_nop'] == true;
+    final hasNpwpd = data['user']?['has_npwpd'] == true;
+    _onboardingComplete = hasNop || hasNpwpd;
+    notifyListeners(); // trigger navigation segera
+    // Load data dashboard di background — tidak blocking navigasi
+    refreshDashboard();
   }
 
   Future<String?> requestOtp(String nik, String purpose, String channel) async {
@@ -301,7 +307,6 @@ class TaxProvider extends ChangeNotifier {
   Future<void> updateProfile(String name, String email, String phone) async {
     try {
       await _api.post('/profile', {
-        '_method': 'POST',
         'full_name': name,
         'email': email,
         'phone_number': phone,
@@ -332,7 +337,7 @@ class TaxProvider extends ChangeNotifier {
       'provider': provider,
       'is_default': isPrimary,
     });
-    await _loadPaymentMethods();
+    await loadPaymentMethods();
     notifyListeners();
   }
 
@@ -351,7 +356,7 @@ class TaxProvider extends ChangeNotifier {
       'provider': provider,
       'is_default': _linkedBanks.isEmpty,
     });
-    await _loadPaymentMethods();
+    await loadPaymentMethods();
     notifyListeners();
     return _linkedBanks.firstWhere(
       (b) =>
@@ -450,7 +455,7 @@ class TaxProvider extends ChangeNotifier {
     try {
       final bill = _pendingBills.cast<TaxBill?>().firstWhere((b) => b?.id == billId, orElse: () => null);
       
-      final futures = <Future>[_loadTransactions()];
+      final futures = <Future>[loadTransactions(force: true)];
       if (bill != null) {
         if (bill.title == 'Pajak PBB') {
           futures.add(_loadNops());
@@ -471,6 +476,7 @@ class TaxProvider extends ChangeNotifier {
     return lastTransaction!;
   }
 
+  /// Lightweight: hanya update lastTransaction (untuk polling status).
   Future<TaxTransaction> fetchTransaction(String id) async {
     final data =
         ApiClient.unwrap(await _api.get('/transactions/$id'))
@@ -478,6 +484,19 @@ class TaxProvider extends ChangeNotifier {
     lastTransaction = _mapTransaction(data);
     notifyListeners();
     return lastTransaction!;
+  }
+
+  /// Full refresh setelah pembayaran sukses (update semua state UI).
+  Future<void> refreshAfterPayment() async {
+    // Jalankan transaksi paralel, tapi NOP+NPWPD harus sequential
+    // karena keduanya memodifikasi _pendingBills dengan removeWhere
+    // → kalau paralel bisa race condition
+    _pendingBills.clear();
+    await Future.wait([
+      loadTransactions(force: true),
+      _loadNops().then((_) => _loadNpwpd()),
+    ]);
+    notifyListeners();
   }
 
   Future<TaxTransaction> simulatePayment(String id) async {
@@ -502,11 +521,10 @@ class TaxProvider extends ChangeNotifier {
       _pendingBills.clear();
       await Future.wait([
         _loadOnboarding(),
-        _loadNops(),
-        _loadNpwpd(),
-        _loadPaymentMethods(),
-        _loadTransactions(),
-        _loadNotifications(),
+        _loadNops(),        // aman paralel: _pendingBills sudah di-clear di atas
+        _loadNpwpd(),       // aman paralel: _pendingBills sudah di-clear di atas
+        loadTransactions(), // load history paralel
+        loadNotifications(),
       ]);
       if (!_onboardingComplete) {
         _onboardingComplete = _nops.isNotEmpty || _npwpd != null;
@@ -570,7 +588,7 @@ class TaxProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadPaymentMethods() async {
+  Future<void> loadPaymentMethods() async {
     final data = ApiClient.unwrap(await _api.get('/payment-methods'));
     _linkedBanks.clear();
     if (data is List) {
@@ -591,7 +609,8 @@ class TaxProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadTransactions() async {
+  Future<void> loadTransactions({bool force = false}) async {
+    if (!force && _history.isNotEmpty) return; // Lazy load optimization
     final data = ApiClient.unwrap(await _api.get('/transactions'));
     _history.clear();
     if (data is List) {
@@ -601,7 +620,7 @@ class TaxProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadNotifications() async {
+  Future<void> loadNotifications() async {
     try {
       final unreadData = await _api.get('/notifications/unread-count');
       _unreadNotificationCount = ApiClient.unwrap(unreadData)['unread_count'] as int? ?? 0;
@@ -629,13 +648,13 @@ class TaxProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Failed to load notifications: $e');
     }
+    notifyListeners();
   }
 
   Future<void> markAsRead(int id) async {
     try {
       await _api.post('/notifications/$id/read');
-      await _loadNotifications();
-      notifyListeners();
+      await loadNotifications();
     } catch (e) {
       // Ignored
     }
@@ -644,8 +663,7 @@ class TaxProvider extends ChangeNotifier {
   Future<void> markAllAsRead() async {
     try {
       await _api.post('/notifications/read-all');
-      await _loadNotifications();
-      notifyListeners();
+      await loadNotifications();
     } catch (e) {
       // Ignored
     }
