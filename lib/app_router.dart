@@ -30,6 +30,7 @@ import 'screens/terms_screen.dart';
 import 'screens/other_taxes_screen.dart';
 import 'screens/pbb_list_screen.dart';
 import 'screens/notification_screen.dart';
+import 'screens/tax_detail_screen.dart';
 import 'utils/page_transitions.dart';
 import 'providers/tax_provider.dart';
 
@@ -137,6 +138,11 @@ class AppRouter {
                   AppPage.fade(state, const ProfileScreen()),
             ),
           ],
+        ),
+        GoRoute(
+          path: '/tax-detail',
+          pageBuilder: (context, state) =>
+              AppPage.slide(state, const TaxDetailScreen()),
         ),
         GoRoute(
           path: '/detail',

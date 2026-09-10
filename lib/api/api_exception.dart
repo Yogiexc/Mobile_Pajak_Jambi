@@ -10,15 +10,32 @@ class ApiException implements Exception {
     final status = error.response?.statusCode;
     final data = error.response?.data;
 
-    if (data is Map) {
-      final errors = data['errors'];
-      if (errors is Map && errors.isNotEmpty) {
-        final first = errors.values.first;
-        if (first is List && first.isNotEmpty) {
-          return ApiException(first.first.toString(), statusCode: status);
-        }
-        return ApiException(first.toString(), statusCode: status);
+    if (status != null) {
+      if (status == 401) {
+        return ApiException('Sesi tidak valid atau telah kedaluwarsa.', statusCode: status);
       }
+      if (status == 404) {
+        return ApiException('Endpoint tidak ditemukan.', statusCode: status);
+      }
+      if (status == 405) {
+        return ApiException('Metode HTTP tidak diizinkan.', statusCode: status);
+      }
+      if (status == 500) {
+        return ApiException('Terjadi kesalahan internal pada server.', statusCode: status);
+      }
+      if (status == 422 && data is Map) {
+        final errors = data['errors'];
+        if (errors is Map && errors.isNotEmpty) {
+          final first = errors.values.first;
+          if (first is List && first.isNotEmpty) {
+            return ApiException(first.first.toString(), statusCode: status);
+          }
+          return ApiException(first.toString(), statusCode: status);
+        }
+      }
+    }
+
+    if (data is Map) {
       if (data['message'] != null) {
         return ApiException(data['message'].toString(), statusCode: status);
       }
@@ -33,8 +50,8 @@ class ApiException implements Exception {
     }
 
     if (error.type == DioExceptionType.connectionError) {
-      return const ApiException(
-        'Tidak bisa terhubung ke server. Pastikan backend Laravel berjalan.',
+      return ApiException(
+        'Tidak bisa terhubung ke server. Pesan: ${error.message}',
       );
     }
 
