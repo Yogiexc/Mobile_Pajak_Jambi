@@ -18,11 +18,16 @@ class AwaitingPaymentScreen extends StatefulWidget {
 
 class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
   Timer? _pollTimer;
+  bool _isChecking = false;
+  bool _isSimulating = false;
 
   @override
   void initState() {
     super.initState();
-    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) => _checkStatus());
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 4),
+      (_) => _checkStatus(),
+    );
   }
 
   @override
@@ -32,10 +37,55 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
   }
 
   Future<void> _checkStatus({bool fromButton = false}) async {
-    // DUMMY: Anggap saja transaksi sudah berhasil/dibayar
-    _pollTimer?.cancel();
-    if (mounted) {
-      context.go('/success');
+    final provider = context.read<TaxProvider>();
+    final tx = provider.lastTransaction;
+    if (tx == null) return;
+
+    if (fromButton) setState(() => _isChecking = true);
+
+    try {
+      final updated = await provider.fetchTransaction(tx.id);
+      if (!mounted) return;
+
+      if (updated.isSuccess) {
+        _pollTimer?.cancel();
+        context.go('/success');
+      } else if (updated.isFailed) {
+        _pollTimer?.cancel();
+        if (fromButton) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pembayaran gagal atau kedaluwarsa.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (fromButton && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal memeriksa status: $e')));
+      }
+    } finally {
+      if (fromButton && mounted) setState(() => _isChecking = false);
+    }
+  }
+
+  Future<void> _simulatePayment() async {
+    final provider = context.read<TaxProvider>();
+    final tx = provider.lastTransaction;
+    if (tx == null) return;
+
+    setState(() => _isSimulating = true);
+    try {
+      await provider.simulatePayment(tx.id);
+      await _checkStatus(fromButton: true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mensimulasikan pembayaran: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSimulating = false);
     }
   }
 
@@ -129,12 +179,14 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                           ],
                           const SizedBox(height: 20),
                           if (tx?.isQris == true) ...[
-                            if (tx?.qrImageUrl != null && tx!.qrImageUrl!.isNotEmpty)
+                            if (tx?.qrImageUrl != null &&
+                                tx!.qrImageUrl!.isNotEmpty)
                               Image.network(
                                 tx.qrImageUrl!,
                                 width: 220,
                                 height: 220,
-                                errorBuilder: (_, _, _) => _qrFallback(tx.qrString),
+                                errorBuilder: (_, _, _) =>
+                                    _qrFallback(tx.qrString),
                               )
                             else
                               _qrFallback(tx?.qrString),
@@ -156,7 +208,9 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                             ),
                             const SizedBox(height: 8),
                             SelectableText(
-                              tx?.vaNumber?.isNotEmpty == true ? tx!.vaNumber! : '-',
+                              tx?.vaNumber?.isNotEmpty == true
+                                  ? tx!.vaNumber!
+                                  : '-',
                               style: GoogleFonts.inter(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
@@ -169,15 +223,23 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                               onPressed: tx?.vaNumber == null
                                   ? null
                                   : () {
-                                      Clipboard.setData(ClipboardData(text: tx!.vaNumber!));
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Nomor VA disalin')),
+                                      Clipboard.setData(
+                                        ClipboardData(text: tx!.vaNumber!),
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Nomor VA disalin'),
+                                        ),
                                       );
                                     },
                               icon: const Icon(Icons.copy, size: 16),
                               label: Text(
                                 'Salin nomor VA',
-                                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -191,7 +253,9 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () => _checkStatus(fromButton: true),
+                  onPressed: _isChecking
+                      ? null
+                      : () => _checkStatus(fromButton: true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryDark,
                     foregroundColor: Colors.white,
@@ -199,13 +263,50 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    'Cek Status Pembayaran',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                  child: _isChecking
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Cek Status Pembayaran',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: _isSimulating ? null : _simulatePayment,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                    side: const BorderSide(color: AppColors.primaryDark),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  child: _isSimulating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          '🧪 Simulasikan Pembayaran Diterima (demo)',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),

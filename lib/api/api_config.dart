@@ -16,3 +16,19 @@ class ApiConfig {
     return 'http://127.0.0.1:8000/api';
   }
 }
+
+/* 
+import 'package:flutter/foundation.dart';
+
+class ApiConfig {
+  /// Override saat run/build, contoh untuk testing lokal:
+  /// `--dart-define=API_BASE_URL=http://192.168.x.x:8000/api`
+  static String get baseUrl {
+    const override = String.fromEnvironment('API_BASE_URL');
+    if (override.isNotEmpty) return override;
+
+    // Default: backend produksi di VPS.
+    return 'https://api-pajakjambi.namadomain.com/api';
+  }
+}
+*/

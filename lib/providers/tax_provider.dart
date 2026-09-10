@@ -201,20 +201,16 @@ class TaxProvider extends ChangeNotifier {
   }
 
   Future<void> loginUser(String nik, String password) async {
-    final data = await _api.post('/login', {
-      'nik': nik,
-      'password': password,
-    });
+    final data = await _api.post('/login', {'nik': nik, 'password': password});
 
     final token = data['token']?.toString();
     if (token == null || token.isEmpty) {
-      throw const ApiException('Login berhasil, tetapi token tidak diterima dari server.');
+      throw const ApiException(
+        'Login berhasil, tetapi token tidak diterima dari server.',
+      );
     }
     await _api.setToken(token);
-    _applyUser({
-      ...?_asMap(data['user']),
-      'nik': nik,
-    });
+    _applyUser({...?_asMap(data['user']), 'nik': nik});
     _loggedIn = true;
     await _persistUser();
     await refreshDashboard();
@@ -240,17 +236,14 @@ class TaxProvider extends ChangeNotifier {
     String? newPasswordConfirmation,
     String? newPin,
   }) async {
-    final body = {
-      'nik': nik,
-      'purpose': purpose,
-      'code': code,
-    };
-    
+    final body = {'nik': nik, 'purpose': purpose, 'code': code};
+
     if (newPassword != null) {
       body['new_password'] = newPassword;
-      body['new_password_confirmation'] = newPasswordConfirmation ?? newPassword;
+      body['new_password_confirmation'] =
+          newPasswordConfirmation ?? newPassword;
     }
-    
+
     if (newPin != null) {
       body['new_pin'] = newPin;
     }
@@ -258,18 +251,26 @@ class TaxProvider extends ChangeNotifier {
     await _api.post('/otp/verify', body);
   }
 
-  Future<void> changePassword(String currentPassword, String newPassword, String newPasswordConfirmation) async {
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+    String newPasswordConfirmation,
+  ) async {
     await _api.post('/change-password', {
       'current_password': currentPassword,
       'new_password': newPassword,
       'new_password_confirmation': newPasswordConfirmation,
     });
-    
+
     // Automatically log out since token for other devices is revoked and this one might be too depending on logic
     // But backend says "token lain otomatis logout". Current device token is kept.
   }
 
-  Future<void> changePin(String currentPin, String newPin, String newPinConfirmation) async {
+  Future<void> changePin(
+    String currentPin,
+    String newPin,
+    String newPinConfirmation,
+  ) async {
     await _api.post('/change-pin', {
       'current_pin': currentPin,
       'new_pin': newPin,
@@ -295,7 +296,7 @@ class TaxProvider extends ChangeNotifier {
         'email': email,
         'phone_number': phone,
       });
-      
+
       userName = name;
       userEmail = email;
       userPhone = phone;
@@ -305,7 +306,9 @@ class TaxProvider extends ChangeNotifier {
       if (e is ApiException) {
         rethrow;
       }
-      throw const ApiException('Gagal memperbarui profil. Periksa koneksi internet Anda.');
+      throw const ApiException(
+        'Gagal memperbarui profil. Periksa koneksi internet Anda.',
+      );
     }
   }
 
@@ -328,7 +331,8 @@ class TaxProvider extends ChangeNotifier {
     required String type,
   }) async {
     final existing = _linkedBanks.where(
-      (b) => b.provider.toLowerCase() == provider.toLowerCase() && b.type == type,
+      (b) =>
+          b.provider.toLowerCase() == provider.toLowerCase() && b.type == type,
     );
     if (existing.isNotEmpty) return existing.first;
 
@@ -340,21 +344,20 @@ class TaxProvider extends ChangeNotifier {
     await _loadPaymentMethods();
     notifyListeners();
     return _linkedBanks.firstWhere(
-      (b) => b.provider.toLowerCase() == provider.toLowerCase() && b.type == type,
+      (b) =>
+          b.provider.toLowerCase() == provider.toLowerCase() && b.type == type,
     );
   }
 
   Future<Map<String, dynamic>> checkNop(String nop) async {
-    return _asMap(await _api.post('/nops/check', {
-          'nop_number': nop.trim(),
-        })) ??
+    return _asMap(await _api.post('/nops/check', {'nop_number': nop.trim()})) ??
         (throw const ApiException('Respons cek NOP tidak valid.'));
   }
 
   Future<Map<String, dynamic>> checkNpwpd(String npwpd) async {
-    return _asMap(await _api.post('/npwpd/check', {
-          'npwpd_number': npwpd.trim(),
-        })) ??
+    return _asMap(
+          await _api.post('/npwpd/check', {'npwpd_number': npwpd.trim()}),
+        ) ??
         (throw const ApiException('Respons cek NPWPD tidak valid.'));
   }
 
@@ -403,9 +406,9 @@ class TaxProvider extends ChangeNotifier {
       body['id_payment'] = paymentId;
     }
 
-    final initiated = ApiClient.unwrap(
-      await _api.post('/transactions/initiate', body),
-    ) as Map<String, dynamic>;
+    final initiated =
+        ApiClient.unwrap(await _api.post('/transactions/initiate', body))
+            as Map<String, dynamic>;
 
     lastTransaction = _mapTransaction(
       initiated,
@@ -417,8 +420,18 @@ class TaxProvider extends ChangeNotifier {
   }
 
   Future<TaxTransaction> fetchTransaction(String id) async {
-    final data = ApiClient.unwrap(await _api.get('/transactions/$id'))
-        as Map<String, dynamic>;
+    final data =
+        ApiClient.unwrap(await _api.get('/transactions/$id'))
+            as Map<String, dynamic>;
+    lastTransaction = _mapTransaction(data);
+    notifyListeners();
+    return lastTransaction!;
+  }
+
+  Future<TaxTransaction> simulatePayment(String id) async {
+    final data =
+        ApiClient.unwrap(await _api.post('/transactions/$id/simulate-payment'))
+            as Map<String, dynamic>;
     lastTransaction = _mapTransaction(data);
     notifyListeners();
     return lastTransaction!;
@@ -533,20 +546,25 @@ class TaxProvider extends ChangeNotifier {
   Future<void> _loadNotifications() async {
     try {
       final unreadData = await _api.get('/notifications/unread-count');
-      _unreadNotificationCount = ApiClient.unwrap(unreadData)['unread_count'] as int? ?? 0;
+      _unreadNotificationCount =
+          ApiClient.unwrap(unreadData)['unread_count'] as int? ?? 0;
 
       final data = ApiClient.unwrap(await _api.get('/notifications'));
       _notifications.clear();
       if (data is List) {
         for (final item in data) {
           final notif = item as Map<String, dynamic>;
-          _notifications.add(TaxNotification(
-            id: notif['id'] as int,
-            title: notif['title']?.toString() ?? 'Pemberitahuan',
-            message: notif['message']?.toString() ?? '',
-            isRead: (notif['is_read'] as bool?) ?? false,
-            sentAt: DateTime.tryParse(notif['sent_at']?.toString() ?? '') ?? DateTime.now(),
-          ));
+          _notifications.add(
+            TaxNotification(
+              id: notif['id'] as int,
+              title: notif['title']?.toString() ?? 'Pemberitahuan',
+              message: notif['message']?.toString() ?? '',
+              isRead: (notif['is_read'] as bool?) ?? false,
+              sentAt:
+                  DateTime.tryParse(notif['sent_at']?.toString() ?? '') ??
+                  DateTime.now(),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -594,7 +612,8 @@ class TaxProvider extends ChangeNotifier {
           amount: _asDouble(bill['amount_due']),
           denda: _asDouble(bill['penalty_amount']),
           status: bill['status_label']?.toString() ?? 'Belum Bayar',
-          dueDate: DateTime.tryParse(bill['due_date']?.toString() ?? '') ??
+          dueDate:
+              DateTime.tryParse(bill['due_date']?.toString() ?? '') ??
               DateTime.now(),
           taxPeriod: bill['tax_period']?.toString() ?? '-',
         ),
@@ -609,11 +628,14 @@ class TaxProvider extends ChangeNotifier {
   }) {
     final payment = map['payment_method'];
     final bill = map['bill'];
-    final paidAt = DateTime.tryParse(map['paid_at']?.toString() ?? '') ??
+    final paidAt =
+        DateTime.tryParse(map['paid_at']?.toString() ?? '') ??
         DateTime.tryParse(map['created_at']?.toString() ?? '') ??
         DateTime.now();
     final channel = map['payment_channel']?.toString();
-    final paymentProvider = payment is Map ? payment['provider']?.toString() : null;
+    final paymentProvider = payment is Map
+        ? payment['provider']?.toString()
+        : null;
 
     return TaxTransaction(
       id: map['id_transactions'].toString(),
@@ -623,8 +645,11 @@ class TaxProvider extends ChangeNotifier {
       amount: _asDouble(map['amount']),
       denda: bill is Map ? _asDouble(bill['penalty_amount']) : 0,
       date: paidAt,
-      bankName: map['bank_label']?.toString() ??
-          (paymentProvider != null ? PaymentOptions.labelFor(paymentProvider) : null) ??
+      bankName:
+          map['bank_label']?.toString() ??
+          (paymentProvider != null
+              ? PaymentOptions.labelFor(paymentProvider)
+              : null) ??
           map['payment_channel_label']?.toString() ??
           fallbackBank ??
           '-',
