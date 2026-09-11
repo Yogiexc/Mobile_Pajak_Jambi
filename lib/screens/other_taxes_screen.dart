@@ -80,96 +80,99 @@ class OtherTaxesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(24.0),
-                itemCount: otherTaxes.length,
-                itemBuilder: (context, index) {
-                  final tax = otherTaxes[index];
-                  
-                  // Check status
-                  final pendingBill = taxProvider.pendingBills.cast<TaxBill?>().firstWhere(
-                    (b) => b!.title == tax.title && b.taxId == npwpd,
-                    orElse: () => null,
-                  );
-                  
-                  final historyTx = taxProvider.history.cast<TaxTransaction?>().firstWhere(
-                    (t) => t!.title == tax.title && t.taxId == npwpd && t.isSuccess,
-                    orElse: () => null,
-                  );
-                  
-                  String status = 'Tidak Ada Data';
-                  Color statusColor = Colors.grey;
-                  if (pendingBill != null) {
-                    status = 'Ada Tagihan';
-                    statusColor = Colors.red;
-                  } else if (historyTx != null) {
-                    status = 'Lunas';
-                    statusColor = AppColors.success;
-                  }
-                  
-                  final isClickable = pendingBill != null;
-
-                  return InkWell(
-                    onTap: isClickable ? () {
-                      // Navigate directly to detail/payment for this bill
-                      context.push('/detail', extra: pendingBill.id);
-                    } : null,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isClickable ? Colors.white : Colors.grey.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: isClickable ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ] : null,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: tax.color.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+              child: RefreshIndicator(
+                onRefresh: () => taxProvider.refreshDashboard(),
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(24.0),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: otherTaxes.length,
+                  itemBuilder: (context, index) {
+                    final tax = otherTaxes[index];
+                    
+                    final npwpdData = taxProvider.npwpdData;
+                    final taxBills = npwpdData?.bills
+                        .where((b) => b.taxComponentLabel == tax.title)
+                        .toList() ?? [];
+                    final unpaidBills = taxBills.where((b) => !b.isPaid).toList();
+                    final hasBills = taxBills.isNotEmpty;
+                    final hasUnpaid = unpaidBills.isNotEmpty;
+                    
+                    String statusText = 'Tidak Ada Tagihan';
+                    Color statusColor = AppColors.textHint;
+                    
+                    if (hasBills) {
+                      if (hasUnpaid) {
+                        statusText = '${unpaidBills.length} Belum Dibayar';
+                        statusColor = AppColors.warning;
+                      } else {
+                        statusText = 'Semua Lunas';
+                        statusColor = AppColors.success;
+                      }
+                    }
+                    
+                    final isClickable = hasBills;
+                    
+                    return InkWell(
+                      onTap: isClickable ? () {
+                        context.push('/npwpd-detail', extra: tax.title);
+                      } : null,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isClickable ? Colors.white : Colors.grey.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: isClickable ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
                             ),
-                            child: Icon(tax.icon, color: tax.color, size: 24),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  tax.title,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: isClickable ? AppColors.primaryDark : AppColors.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  status,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: statusColor,
-                                  ),
-                                ),
-                              ],
+                          ] : null,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: tax.color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(tax.icon, color: tax.color, size: 24),
                             ),
-                          ),
-                          if (isClickable)
-                            const Icon(Icons.chevron_right, color: AppColors.textHint),
-                        ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    tax.title,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: isClickable ? AppColors.primaryDark : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    statusText,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: statusColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isClickable)
+                              const Icon(Icons.chevron_right, color: AppColors.textHint),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ],
