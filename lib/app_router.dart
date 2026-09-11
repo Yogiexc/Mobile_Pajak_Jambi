@@ -29,6 +29,8 @@ import 'screens/privacy_policy_screen.dart';
 import 'screens/terms_screen.dart';
 import 'screens/other_taxes_screen.dart';
 import 'screens/pbb_list_screen.dart';
+import 'screens/pbb_detail_screen.dart';
+import 'screens/npwpd_detail_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/tax_detail_screen.dart';
 import 'utils/page_transitions.dart';
@@ -244,10 +246,25 @@ class AppRouter {
               AppPage.slide(state, const PbbListScreen()),
         ),
         GoRoute(
+          path: '/pbb-detail/:nopNumber',
+          pageBuilder: (context, state) {
+            final nopNumber = state.pathParameters['nopNumber']!;
+            return AppPage.slide(state, PbbDetailScreen(nopNumber: nopNumber));
+          },
+        ),
+        GoRoute(
+          path: '/npwpd-detail',
+          pageBuilder: (context, state) {
+            final taxComponentLabel = state.extra as String? ?? '';
+            return AppPage.slide(state, NpwpdDetailScreen(taxComponentLabel: taxComponentLabel));
+          },
+        ),
+        GoRoute(
           path: '/other-taxes',
           pageBuilder: (context, state) =>
               AppPage.slide(state, const OtherTaxesScreen()),
         ), 
+
         GoRoute(
           path: '/privacy-policy',
           pageBuilder: (context, state) =>

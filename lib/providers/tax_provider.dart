@@ -31,7 +31,113 @@ class TaxBill {
   });
 
   double get total => amount + denda;
+  bool get isPaid => status.toLowerCase() == 'lunas' || status.toLowerCase() == 'paid';
 }
+
+/// Merepresentasikan satu tagihan pada satu periode untuk sebuah NOP
+class NopBill {
+  final String id;
+  final String taxPeriod;
+  final double amountDue;
+  final double penalty;
+  final double totalAmount;
+  final String status;      // 'paid' | 'unpaid'
+  final String statusLabel; // 'Lunas' | 'Belum Dibayar'
+  final DateTime dueDate;
+  final bool isOverdue;
+
+  NopBill({
+    required this.id,
+    required this.taxPeriod,
+    required this.amountDue,
+    required this.penalty,
+    required this.totalAmount,
+    required this.status,
+    required this.statusLabel,
+    required this.dueDate,
+    required this.isOverdue,
+  });
+
+  bool get isPaid => status == 'paid';
+}
+
+/// Data lengkap satu objek NOP beserta semua tagihan (paid & unpaid)
+class NopData {
+  final String nopNumber;
+  final String objectName;
+  final String ownerName;
+  final String objectAddress;
+  final bool isVerified;
+  final List<NopBill> bills;
+
+  NopData({
+    required this.nopNumber,
+    required this.objectName,
+    required this.ownerName,
+    required this.objectAddress,
+    required this.isVerified,
+    required this.bills,
+  });
+
+  List<NopBill> get unpaidBills => bills.where((b) => !b.isPaid).toList();
+  List<NopBill> get paidBills   => bills.where((b) => b.isPaid).toList();
+  bool get hasUnpaid => unpaidBills.isNotEmpty;
+  double get totalUnpaid => unpaidBills.fold(0, (s, b) => s + b.totalAmount);
+}
+
+class NpwpdBill {
+  final String id;
+  final String taxPeriod;
+  final String taxComponent;
+  final String taxComponentLabel;
+  final double amountDue;
+  final double penalty;
+  final double totalAmount;
+  final String status;
+  final String statusLabel;
+  final DateTime dueDate;
+  final bool isOverdue;
+
+  NpwpdBill({
+    required this.id,
+    required this.taxPeriod,
+    required this.taxComponent,
+    required this.taxComponentLabel,
+    required this.amountDue,
+    required this.penalty,
+    required this.totalAmount,
+    required this.status,
+    required this.statusLabel,
+    required this.dueDate,
+    required this.isOverdue,
+  });
+
+  bool get isPaid => status == 'paid';
+}
+
+class NpwpdData {
+  final String npwpdNumber;
+  final String businessName;
+  final String businessType;
+  final String ownerName;
+  final bool isVerified;
+  final List<NpwpdBill> bills;
+
+  NpwpdData({
+    required this.npwpdNumber,
+    required this.businessName,
+    required this.businessType,
+    required this.ownerName,
+    required this.isVerified,
+    required this.bills,
+  });
+
+  List<NpwpdBill> get unpaidBills => bills.where((b) => !b.isPaid).toList();
+  List<NpwpdBill> get paidBills   => bills.where((b) => b.isPaid).toList();
+  bool get hasUnpaid => unpaidBills.isNotEmpty;
+  double get totalUnpaid => unpaidBills.fold(0, (s, b) => s + b.totalAmount);
+}
+
 
 class TaxTransaction {
   final String id;
@@ -128,10 +234,12 @@ class TaxProvider extends ChangeNotifier {
   final List<TaxTransaction> _history = [];
   final List<LinkedBank> _linkedBanks = [];
   final List<String> _nops = [];
+  final List<NopData> _nopData = [];
   final List<TaxNotification> _notifications = [];
   int _unreadNotificationCount = 0;
 
   String? _npwpd;
+  NpwpdData? _npwpdData;
   String? userName;
   String? userEmail;
   String? userPhone;
@@ -144,6 +252,7 @@ class TaxProvider extends ChangeNotifier {
   bool get isLoggedIn => _loggedIn;
   bool get isLoading => _loading;
   String? get npwpd => _npwpd;
+  NpwpdData? get npwpdData => _npwpdData;
   bool get hasNpwpd => _npwpd != null;
   bool get hasNop => _nops.isNotEmpty;
   bool get needsOnboarding => _loggedIn && !_onboardingComplete;
@@ -151,6 +260,7 @@ class TaxProvider extends ChangeNotifier {
   List<TaxTransaction> get history => List.unmodifiable(_history);
   List<LinkedBank> get linkedBanks => List.unmodifiable(_linkedBanks);
   List<String> get nops => List.unmodifiable(_nops);
+  List<NopData> get nopData => List.unmodifiable(_nopData);
   List<TaxNotification> get notifications => List.unmodifiable(_notifications);
   int get unreadNotificationCount => _unreadNotificationCount;
 
@@ -553,6 +663,7 @@ class TaxProvider extends ChangeNotifier {
   Future<void> _loadNops() async {
     final data = ApiClient.unwrap(await _api.get('/nops'));
     _nops.clear();
+    _nopData.clear();
     _pendingBills.removeWhere((b) => b.title == 'Pajak PBB');
 
     if (data is List) {
@@ -560,6 +671,37 @@ class TaxProvider extends ChangeNotifier {
         final nop = item as Map<String, dynamic>;
         final number = nop['nop_number']?.toString() ?? '';
         if (number.isNotEmpty) _nops.add(number);
+
+        // Parse ALL bills (paid + unpaid) for NopData
+        final rawBills = nop['bills'];
+        final allBills = <NopBill>[];
+        if (rawBills is List) {
+          for (final b in rawBills) {
+            final bm = b as Map<String, dynamic>;
+            allBills.add(NopBill(
+              id: bm['id_bills'].toString(),
+              taxPeriod: bm['tax_period']?.toString() ?? '-',
+              amountDue: _asDouble(bm['amount_due']),
+              penalty: _asDouble(bm['penalty_amount']),
+              totalAmount: _asDouble(bm['total_amount']),
+              status: bm['status']?.toString() ?? 'unpaid',
+              statusLabel: bm['status_label']?.toString() ?? 'Belum Dibayar',
+              dueDate: DateTime.tryParse(bm['due_date']?.toString() ?? '') ?? DateTime.now(),
+              isOverdue: bm['is_overdue'] == true,
+            ));
+          }
+        }
+
+        _nopData.add(NopData(
+          nopNumber: number,
+          objectName: nop['object_name']?.toString() ?? 'Properti',
+          ownerName: nop['owner_name']?.toString() ?? '-',
+          objectAddress: nop['object_address']?.toString() ?? '-',
+          isVerified: nop['is_verified'] == true,
+          bills: allBills,
+        ));
+
+        // Only unpaid bills go into _pendingBills (untuk Home & Ringkasan)
         _appendBills(
           bills: nop['bills'],
           title: 'Pajak PBB',
@@ -579,12 +721,48 @@ class TaxProvider extends ChangeNotifier {
     final map = _asMap(data);
     if (map != null) {
       _npwpd = map['npwpd_number']?.toString();
+
+      final rawBills = map['bills'];
+      final allBills = <NpwpdBill>[];
+      if (rawBills is List) {
+        for (final b in rawBills) {
+          final bm = b as Map<String, dynamic>;
+          allBills.add(NpwpdBill(
+            id: bm['id_bills'].toString(),
+            taxPeriod: bm['tax_period']?.toString() ?? '-',
+            taxComponent: bm['tax_component']?.toString() ?? '',
+            taxComponentLabel: bm['tax_component_label']?.toString() ?? 'Pajak Daerah',
+            amountDue: _asDouble(bm['amount_due']),
+            penalty: _asDouble(bm['penalty_amount']),
+            totalAmount: _asDouble(bm['total_amount']),
+            status: bm['status']?.toString() ?? 'unpaid',
+            statusLabel: bm['status_label']?.toString() ?? 'Belum Dibayar',
+            dueDate: DateTime.tryParse(bm['due_date']?.toString() ?? '') ?? DateTime.now(),
+            isOverdue: bm['is_overdue'] == true,
+          ));
+        }
+      }
+
+      if (_npwpd != null) {
+        _npwpdData = NpwpdData(
+          npwpdNumber: _npwpd!,
+          businessName: map['business_name']?.toString() ?? 'Usaha',
+          businessType: map['business_type']?.toString() ?? 'Pajak Daerah',
+          ownerName: map['owner_name']?.toString() ?? '-',
+          isVerified: map['is_verified'] == true,
+          bills: allBills,
+        );
+      }
+
+      // Populate pending bills for backward compatibility / summary
       _appendBills(
         bills: map['bills'],
         title: map['business_type']?.toString() ?? 'Pajak Usaha',
         taxId: _npwpd ?? '',
         namaObjek: map['business_name']?.toString() ?? 'Usaha',
       );
+    } else {
+      _npwpdData = null;
     }
   }
 
