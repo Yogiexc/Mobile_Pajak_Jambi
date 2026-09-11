@@ -80,8 +80,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordController.text
       );
       
-      // We do not need context.go('/register-nop') because GoRouter will automatically redirect
-      // once loginUser completes and updates tax.isLoggedIn and tax.isLoading.
+      if (mounted) {
+        context.go('/register-nop');
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
