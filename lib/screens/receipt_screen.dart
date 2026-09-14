@@ -47,6 +47,13 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     
     final tx = transaction;
 
+    // Tentukan identitas pajak berdasarkan jenis
+    final isPbb = tx.title.toUpperCase().contains('PBB');
+    final taxIdLabel = isPbb ? 'NOP' : 'NPWPD';
+    final taxIdValue = tx.taxId.isNotEmpty
+        ? tx.taxId
+        : (isPbb ? '-' : (taxProvider.npwpd ?? '-'));
+
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
@@ -131,12 +138,12 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     child: Divider(color: AppColors.textHint, thickness: 1),
                   ),
 
-                  _buildDetailRow('NPWPD', taxProvider.npwpd ?? 'P.2.0004913.01.009'),
+                  _buildDetailRow(taxIdLabel, taxIdValue),
                   _buildDetailRow('Jenis Pajak', tx.title),
                   if (tx.namaObjek.isNotEmpty && tx.namaObjek != '-')
                     _buildDetailRow('Objek Pajak', tx.namaObjek),
-                  _buildDetailRow('Masa Pajak', '01/06/2026 S.D. 30/06/2026'),
-                  _buildDetailRow('Kode Rekening', '4.1.1.19.04.001.00.00'),
+                  if ((tx.taxPeriod ?? '').isNotEmpty && tx.taxPeriod != '-')
+                    _buildDetailRow('Periode Pajak', tx.taxPeriod!),
                   
                   const SizedBox(height: 16),
                   Text(
@@ -251,7 +258,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       final downloadUrl = '${ApiConfig.baseUrl}/transactions/${tx.id}/proof';
-                      final text = 'Bukti Pembayaran Pajak\nNo: ${tx.id}\nTanggal: ${dateFormat.format(tx.date)}\nTotal: ${currencyFormatter.format(tx.amount + tx.denda)}\nUnduh: $downloadUrl';
+                      final text = 'Bukti Pembayaran Pajak\nNo: ${tx.transactionRef.isNotEmpty ? tx.transactionRef : tx.id}\nTanggal: ${dateFormat.format(tx.date)}\nTotal: ${currencyFormatter.format(tx.amount)}\nUnduh: $downloadUrl';
                       // ignore: deprecated_member_use
                       await Share.share(text);
                     },

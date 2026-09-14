@@ -315,7 +315,48 @@ class NpwpdDetailScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              ]
+                              ] else if (isPaid) ...[
+                                const SizedBox(height: 16),
+                                const Divider(height: 1),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton.icon(
+                                    onPressed: () {
+                                      // Prioritas 1: cocokkan berdasarkan billId (id_bills)
+                                      TaxTransaction? target = taxProvider.history.cast<TaxTransaction?>().firstWhere(
+                                        (t) => t?.billId != null && t!.billId == bill.id,
+                                        orElse: () => null,
+                                      );
+                                      // Prioritas 2: cocokkan berdasarkan taxPeriod + objectName
+                                      target ??= taxProvider.history.cast<TaxTransaction?>().firstWhere(
+                                        (t) =>
+                                            t?.title.toUpperCase().contains('PBB') == false &&
+                                            t?.namaObjek == npwpdData.businessName &&
+                                            t?.taxPeriod != null && t!.taxPeriod == bill.taxPeriod,
+                                        orElse: () => null,
+                                      );
+                                      // Prioritas 3: fallback by objectName
+                                      target ??= taxProvider.history.cast<TaxTransaction?>().firstWhere(
+                                        (t) =>
+                                            t?.title.toUpperCase().contains('PBB') == false &&
+                                            t?.namaObjek == npwpdData.businessName,
+                                        orElse: () => null,
+                                      );
+                                      
+                                      if (target != null) {
+                                        context.push('/receipt', extra: target.id);
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Bukti pembayaran tidak ditemukan')),
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.receipt_long_outlined, size: 16),
+                                    label: Text('Lihat Bukti', style: GoogleFonts.inter(fontSize: 12)),
+                                    style: TextButton.styleFrom(foregroundColor: AppColors.primaryBlue),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         );

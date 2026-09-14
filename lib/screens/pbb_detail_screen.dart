@@ -252,11 +252,33 @@ class PbbDetailScreen extends StatelessWidget {
                             else if (isPaid)
                               TextButton.icon(
                                 onPressed: () {
-                                  final tx = taxProvider.history.cast<TaxTransaction?>().firstWhere(
-                                    (t) => t?.title.toUpperCase().contains('PBB') == true && t?.namaObjek == nopData.objectName,
+                                  // Prioritas 1: cocokkan berdasarkan billId (id_bills) — paling akurat
+                                  TaxTransaction? target = taxProvider.history.cast<TaxTransaction?>().firstWhere(
+                                    (t) => t?.billId != null && t!.billId == bill.id,
                                     orElse: () => null,
                                   );
-                                  if (tx != null) context.push('/receipt', extra: tx.id);
+                                  // Prioritas 2: cocokkan berdasarkan namaObjek + taxPeriod
+                                  target ??= taxProvider.history.cast<TaxTransaction?>().firstWhere(
+                                    (t) =>
+                                        t?.title.toUpperCase().contains('PBB') == true &&
+                                        t?.namaObjek == nopData.objectName &&
+                                        t?.taxPeriod != null && t!.taxPeriod == bill.taxPeriod,
+                                    orElse: () => null,
+                                  );
+                                  // Prioritas 3: namaObjek saja (fallback terakhir)
+                                  target ??= taxProvider.history.cast<TaxTransaction?>().firstWhere(
+                                    (t) =>
+                                        t?.title.toUpperCase().contains('PBB') == true &&
+                                        t?.namaObjek == nopData.objectName,
+                                    orElse: () => null,
+                                  );
+                                  if (target != null) {
+                                    context.push('/receipt', extra: target.id);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Bukti pembayaran tidak ditemukan')),
+                                    );
+                                  }
                                 },
                                 icon: const Icon(Icons.receipt_long_outlined, size: 16),
                                 label: Text('Lihat Bukti', style: GoogleFonts.inter(fontSize: 12)),

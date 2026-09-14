@@ -143,6 +143,8 @@ class TaxTransaction {
   final String id;
   final String title;
   final String taxId;
+  final String? billId;    // id_bills — untuk mencocokkan ke tagihan spesifik
+  final String? taxPeriod; // periode tagihan (contoh: '2025')
   final String namaObjek;
   final double amount;
   final double denda;
@@ -161,6 +163,8 @@ class TaxTransaction {
     required this.id,
     required this.title,
     required this.taxId,
+    this.billId,
+    this.taxPeriod,
     this.namaObjek = '-',
     required this.amount,
     this.denda = 0,
@@ -814,9 +818,9 @@ class TaxProvider extends ChangeNotifier {
           final notif = item as Map<String, dynamic>;
           _notifications.add(
             TaxNotification(
-              id: notif['id'] as int,
+              id: notif['id_notifications'] as int,
               title: notif['title']?.toString() ?? 'Pemberitahuan',
-              message: notif['message']?.toString() ?? '',
+              message: notif['body']?.toString() ?? '',
               isRead: (notif['is_read'] as bool?) ?? false,
               sentAt: DateTime.tryParse(notif['sent_at']?.toString() ?? '') ?? DateTime.now(),
             ),
@@ -895,7 +899,10 @@ class TaxProvider extends ChangeNotifier {
     return TaxTransaction(
       id: map['id_transactions'].toString(),
       title: map['tax_type_label']?.toString() ?? 'Pajak Daerah',
-      taxId: '',
+      // reference_number = NOP atau NPWPD (dari relasi reference di backend)
+      taxId: map['reference_number']?.toString() ?? '',
+      billId: bill is Map ? bill['id_bills']?.toString() : null,
+      taxPeriod: bill is Map ? bill['tax_period']?.toString() : null,
       namaObjek: map['object_name']?.toString() ?? '-',
       amount: _asDouble(map['amount']),
       denda: bill is Map ? _asDouble(bill['penalty_amount']) : 0,

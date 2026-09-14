@@ -137,6 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 
                 if (taxProvider.pendingBills.isNotEmpty)
                   _buildMainCard(context, taxProvider, currencyFormatter)
+                else if (taxProvider.hasNop || taxProvider.hasNpwpd)
+                  _buildAllPaidCard(context)
                 else
                   _buildEmptyCard(context),
                 
@@ -788,6 +790,87 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAllPaidCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.success.withValues(alpha: 0.25),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.success.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              size: 44,
+              color: AppColors.success,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Semua Tagihan Sudah Lunas',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: AppColors.primaryDark,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tidak ada tagihan pajak yang perlu\ndibayar saat ini.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push('/pbb-list'),
+              icon: const Icon(Icons.list_alt_rounded, size: 18),
+              label: const Text('Lihat Pajak Terdaftar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

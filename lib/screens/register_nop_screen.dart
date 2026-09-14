@@ -35,7 +35,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
   Future<void> _handleAddTax() async {
     if (_taxIdController.text.isEmpty) return;
     final provider = context.read<TaxProvider>();
-    final taxId = _taxIdController.text;
+    final taxId = _taxIdController.text.trim();
     final isNpwpd = _selectedConfig.title == 'Pajak Lainnya';
 
     if (isNpwpd && provider.hasNpwpd) {
@@ -46,6 +46,61 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
         ),
       );
       return;
+    }
+
+    // Cegah duplikat NOP: jika NOP sudah terdaftar, tampilkan dialog informatif
+    if (!isNpwpd) {
+      final isDuplicate = provider.nops.any(
+        (n) => n.trim().toUpperCase() == taxId.toUpperCase(),
+      );
+      if (isDuplicate) {
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(Icons.info_rounded, color: AppColors.primaryBlue, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'NOP Sudah Terdaftar',
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                ),
+              ],
+            ),
+            content: Text(
+              'NOP $taxId sudah terdaftar di akun Anda. Anda tidak perlu mendaftarkannya lagi.\n\nSilakan lihat daftar objek pajak yang sudah ada.',
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'Tutup',
+                  style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.push('/pbb-list');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  'Lihat Daftar PBB',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
     }
 
     setState(() {
