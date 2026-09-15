@@ -30,7 +30,21 @@ class NpwpdDetailScreen extends StatelessWidget {
       decimalDigits: 0,
     );
 
-    final taxBills = npwpdData.bills.where((b) => b.taxComponentLabel == taxComponentLabel).toList();
+    final taxBills = npwpdData.bills.where((b) {
+      final api = b.taxComponentLabel.toLowerCase().replaceAll('pajak ', '').replaceAll('pbjt ', '').replaceAll(' ', '');
+      final title = taxComponentLabel.toLowerCase().replaceAll('pajak ', '').replaceAll('pbjt ', '').replaceAll(' ', '');
+      if (api == title) return true;
+      if (title.contains('makanan') && (api.contains('restoran') || api.contains('makanan'))) return true;
+      if (title.contains('listrik') && (api.contains('penerangan') || api.contains('listrik'))) return true;
+      if (title.contains('mineral') && (api.contains('mineral') || api.contains('logam'))) return true;
+      if (title.contains('hiburan') && api.contains('hiburan')) return true;
+      if (title.contains('hotel') && api.contains('hotel')) return true;
+      if (title.contains('parkir') && api.contains('parkir')) return true;
+      if (title.contains('reklame') && api.contains('reklame')) return true;
+      if (title.contains('airtanah') && (api.contains('airtanah') || api.contains('air'))) return true;
+      if (title.contains('walet') && (api.contains('walet') || api.contains('burung'))) return true;
+      return false;
+    }).toList();
     final unpaidBills = taxBills.where((b) => !b.isPaid).toList();
     final hasUnpaid = unpaidBills.isNotEmpty;
     final totalUnpaid = unpaidBills.fold<double>(0, (sum, b) => sum + b.totalAmount);
