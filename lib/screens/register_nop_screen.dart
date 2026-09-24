@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import '../widgets/tax_preview_dialog.dart';
 
 class RegisterNopScreen extends StatefulWidget {
   const RegisterNopScreen({super.key});
@@ -34,7 +35,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
   Future<void> _handleAddTax() async {
     if (_taxIdController.text.isEmpty) return;
     final provider = context.read<TaxProvider>();
-    final taxId = _taxIdController.text;
+    final taxId = _taxIdController.text.trim();
     final isNpwpd = _selectedConfig.title == 'Pajak Lainnya';
 
     if (isNpwpd && provider.hasNpwpd) {
@@ -47,11 +48,96 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
       return;
     }
 
+    // Cegah duplikat NOP: jika NOP sudah terdaftar, tampilkan dialog informatif
+    if (!isNpwpd) {
+      final isDuplicate = provider.nops.any(
+        (n) => n.trim().toUpperCase() == taxId.toUpperCase(),
+      );
+      if (isDuplicate) {
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(Icons.info_rounded, color: AppColors.primaryBlue, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'NOP Sudah Terdaftar',
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                ),
+              ],
+            ),
+            content: Text(
+              'NOP $taxId sudah terdaftar di akun Anda. Anda tidak perlu mendaftarkannya lagi.\n\nSilakan lihat daftar objek pajak yang sudah ada.',
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'Tutup',
+                  style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.push('/pbb-list');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  'Lihat Daftar PBB',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
+      late final Map<String, dynamic> preview;
+      late final Map<String, String> rows;
+      if (isNpwpd) {
+        preview = await provider.checkNpwpd(taxId);
+        rows = {
+          'NPWPD': preview['npwpd_number']?.toString() ?? taxId,
+          'Nama Usaha': preview['business_name']?.toString() ?? '-',
+          'Jenis Usaha': preview['business_type']?.toString() ?? '-',
+          'Pemilik': preview['owner_name']?.toString() ?? '-',
+        };
+      } else {
+        preview = await provider.checkNop(taxId);
+        rows = {
+          'NOP': preview['nop_number']?.toString() ?? taxId,
+          'Objek Pajak': preview['object_name']?.toString() ?? '-',
+          'Pemilik': preview['owner_name']?.toString() ?? '-',
+          'Alamat': preview['object_address']?.toString() ?? '-',
+        };
+      }
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      final confirmed = await showTaxObjectConfirmDialog(
+        context: context,
+        title: isNpwpd ? 'Konfirmasi NPWPD' : 'Konfirmasi NOP',
+        rows: rows,
+      );
+      if (!confirmed || !mounted) return;
+
+      setState(() => _isLoading = true);
       if (isNpwpd) {
         await provider.addNpwpd(taxId);
       } else {
@@ -59,7 +145,12 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
       }
       if (!mounted) return;
       setState(() {
-        _addedTaxes.add({'type': _selectedConfig.title, 'taxId': taxId});
+        final namaObjek = isNpwpd ? preview['business_name']?.toString() : preview['object_name']?.toString();
+        _addedTaxes.add({
+          'type': _selectedConfig.title, 
+          'taxId': taxId,
+          'namaObjek': namaObjek ?? '',
+        });
         _taxIdController.clear();
         _isLoading = false;
       });
@@ -80,6 +171,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
   }
 
   void _finishSetup() {
+    context.read<TaxProvider>().completeOnboarding();
     context.go('/home');
   }
 
@@ -91,6 +183,9 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TaxProvider>();
+    final canFinish = provider.hasNop || provider.hasNpwpd;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -312,11 +407,21 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
                                           Text(
                                             item['type']!,
                                             style: GoogleFonts.inter(
-                                              fontSize: 12,
+                                              fontSize: 10,
                                               fontWeight: FontWeight.w600,
-                                              color: AppColors.primaryDark,
+                                              color: AppColors.primaryBlue,
                                             ),
                                           ),
+                                          const SizedBox(height: 2),
+                                          if (item['namaObjek'] != null && item['namaObjek']!.isNotEmpty)
+                                            Text(
+                                              item['namaObjek']!,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.primaryDark,
+                                              ),
+                                            ),
                                           Text(
                                             '${config.inputLabel.split('(').first.trim()}: ${item['taxId']!}',
                                             style: GoogleFonts.inter(
@@ -359,7 +464,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _finishSetup,
+                      onPressed: canFinish ? _finishSetup : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDark,
                         foregroundColor: Colors.white,

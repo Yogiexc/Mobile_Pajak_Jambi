@@ -18,7 +18,7 @@ void main() async {
 
   runApp(
     DevicePreview(
-      enabled: kIsWeb && !kReleaseMode,
+      enabled: !kReleaseMode,
       builder: (context) => ChangeNotifierProvider.value(
         value: taxProvider,
         child: PajakJambiApp(router: router),

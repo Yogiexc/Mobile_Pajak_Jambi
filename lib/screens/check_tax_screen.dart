@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
+import '../widgets/tax_preview_dialog.dart';
 
 class CheckTaxScreen extends StatefulWidget {
   final String serviceName;
@@ -18,6 +19,7 @@ class CheckTaxScreen extends StatefulWidget {
 class _CheckTaxScreenState extends State<CheckTaxScreen> {
   final _taxIdController = TextEditingController();
   late TaxConfig _config;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -27,12 +29,29 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
   }
 
   Future<void> _checkTax() async {
-    if (_taxIdController.text.isEmpty) return;
+    if (_taxIdController.text.isEmpty || _isLoading) return;
+    final taxId = _taxIdController.text.trim();
+    final provider = context.read<TaxProvider>();
 
+    setState(() => _isLoading = true);
     try {
-      final provider = context.read<TaxProvider>();
       if (widget.serviceName == 'Pajak Lainnya') {
-        await provider.addNpwpd(_taxIdController.text);
+        final preview = await provider.checkNpwpd(taxId);
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        final confirmed = await showTaxObjectConfirmDialog(
+          context: context,
+          title: 'Konfirmasi NPWPD',
+          rows: {
+            'NPWPD': preview['npwpd_number']?.toString() ?? taxId,
+            'Nama Usaha': preview['business_name']?.toString() ?? '-',
+            'Jenis Usaha': preview['business_type']?.toString() ?? '-',
+            'Pemilik': preview['owner_name']?.toString() ?? '-',
+          },
+        );
+        if (!confirmed || !mounted) return;
+        setState(() => _isLoading = true);
+        await provider.addNpwpd(taxId);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -42,7 +61,22 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
         );
         context.pushReplacement('/other-taxes');
       } else if (widget.serviceName == 'Pajak PBB') {
-        await provider.addNop(_taxIdController.text);
+        final preview = await provider.checkNop(taxId);
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        final confirmed = await showTaxObjectConfirmDialog(
+          context: context,
+          title: 'Konfirmasi NOP',
+          rows: {
+            'NOP': preview['nop_number']?.toString() ?? taxId,
+            'Objek Pajak': preview['object_name']?.toString() ?? '-',
+            'Pemilik': preview['owner_name']?.toString() ?? '-',
+            'Alamat': preview['object_address']?.toString() ?? '-',
+          },
+        );
+        if (!confirmed || !mounted) return;
+        setState(() => _isLoading = true);
+        await provider.addNop(taxId);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -52,7 +86,7 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
         );
         context.pop();
       } else {
-        await provider.addBill(_taxIdController.text, widget.serviceName);
+        await provider.addBill(taxId, widget.serviceName);
         if (!mounted) return;
         final newBill = context.read<TaxProvider>().pendingBills.last;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -68,6 +102,8 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -143,7 +179,7 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _checkTax,
+                  onPressed: _isLoading ? null : _checkTax,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryDark,
                     foregroundColor: Colors.white,
@@ -152,7 +188,7 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
                     ),
                   ),
                   child: Text(
-                    'Cek & Tambahkan',
+                    _isLoading ? 'Mencari Data...' : 'Cek & Tambahkan',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

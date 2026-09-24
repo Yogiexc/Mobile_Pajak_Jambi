@@ -49,26 +49,13 @@ class ProfileScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            border: Border.all(color: Colors.white, width: 2),
-                            image: const DecorationImage(
-                              image: AssetImage('assets/images/logo.png'), 
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
+
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                taxProvider.userName ?? 'Akun Dummy',
+                                taxProvider.userName ?? 'Akun Pengguna',
                                 style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -141,9 +128,52 @@ class ProfileScreen extends StatelessWidget {
                                   _buildMenuDivider(),
                                   _buildMenuItem(Icons.account_balance_outlined, 'Kelola Rekening Bank', onTap: () => context.push('/linked-bank')),
                                   _buildMenuDivider(),
-                                  _buildMenuItem(Icons.security_outlined, 'Keamanan Akun'),
+                                  _buildMenuItem(Icons.security_outlined, 'Keamanan Akun', onTap: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                      ),
+                                      builder: (context) => Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 20),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Keamanan Akun',
+                                              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            ListTile(
+                                              leading: const Icon(Icons.lock_outline, color: AppColors.primary),
+                                              title: Text('Ganti Kata Sandi', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                                              trailing: const Icon(Icons.chevron_right, size: 20),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                context.push('/change-password');
+                                              },
+                                            ),
+                                            const Divider(indent: 16, endIndent: 16),
+                                            ListTile(
+                                              leading: const Icon(Icons.dialpad, color: AppColors.primary),
+                                              title: Text('Ganti PIN Transaksi', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                                              trailing: const Icon(Icons.chevron_right, size: 20),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                context.push('/change-pin');
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }),
                                   _buildMenuDivider(),
-                                  _buildMenuItem(Icons.notifications_none_outlined, 'Notifikasi'),
+                                  _buildMenuItem(
+                                    Icons.notifications_none_outlined,
+                                    'Notifikasi',
+                                    onTap: () => context.push('/notifications'),
+                                  ),
                                 ],
                               ),
                             ),
@@ -260,13 +290,13 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           _buildMenuDivider(),
-          _buildInfoRow(Icons.person_outline, 'Nama Lengkap', taxProvider.userName ?? 'Akun Dummy'),
+          _buildInfoRow(Icons.person_outline, 'Nama Lengkap', taxProvider.userName ?? '-'),
           _buildMenuDivider(),
           _buildInfoRow(Icons.badge_outlined, 'NIK', '317402120***0001'),
           _buildMenuDivider(),
-          _buildInfoRow(Icons.phone_outlined, 'No. HP', taxProvider.userPhone ?? '0812-3456-7890'),
+          _buildInfoRow(Icons.phone_outlined, 'No. HP', taxProvider.userPhone ?? '-'),
           _buildMenuDivider(),
-          _buildInfoRow(Icons.email_outlined, 'Email', taxProvider.userEmail ?? 'bryan@email.com'),
+          _buildInfoRow(Icons.email_outlined, 'Email', taxProvider.userEmail ?? '-'),
           const SizedBox(height: 8),
         ],
       ),

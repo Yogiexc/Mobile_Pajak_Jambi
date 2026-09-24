@@ -6,8 +6,24 @@ import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../providers/tax_provider.dart';
 
-class PaymentSuccessScreen extends StatelessWidget {
+class PaymentSuccessScreen extends StatefulWidget {
   const PaymentSuccessScreen({super.key});
+
+  @override
+  State<PaymentSuccessScreen> createState() => _PaymentSuccessScreenState();
+}
+
+class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Pastikan data home (tagihan, ringkasan) sudah fresh saat user kembali
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<TaxProvider>().refreshAfterPayment();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

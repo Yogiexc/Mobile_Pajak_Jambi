@@ -45,7 +45,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordController.text.isEmpty ||
         _pinController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap lengkapi semua kolom wajib (termasuk PIN).'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Harap lengkapi semua kolom wajib.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Konfirmasi kata sandi tidak cocok.'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -61,11 +68,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         nik: _nikController.text.trim(),
         passwordConfirmation: _confirmPasswordController.text,
       );
+      
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Akun berhasil dibuat!'), backgroundColor: AppColors.success),
+        const SnackBar(content: Text('Akun berhasil dibuat! Memuat...'), backgroundColor: AppColors.success),
       );
-      context.go('/register-nop');
+
+      // Auto-login after successful registration
+      await context.read<TaxProvider>().loginUser(
+        _nikController.text.trim(), 
+        _passwordController.text
+      );
+      
+      if (mounted) {
+        context.go('/register-nop');
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -179,6 +196,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _nikController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           keyboardType: TextInputType.number,
                           maxLength: 16,
                           decoration: const InputDecoration(
@@ -237,6 +257,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: 'Minimal 8 karakter',
@@ -267,6 +290,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _confirmPasswordController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           obscureText: _obscureConfirm,
                           decoration: InputDecoration(
                             hintText: 'Ulangi kata sandi',
@@ -297,6 +323,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _pinController,
+                          autofillHints: const [],
+                          enableSuggestions: false,
+                          autocorrect: false,
                           obscureText: true,
                           keyboardType: TextInputType.number,
                           maxLength: 6,

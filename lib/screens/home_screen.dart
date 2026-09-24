@@ -16,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController();
-  int _currentCardIndex = 0;
 
   @override
   void dispose() {
@@ -81,30 +80,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Image.asset('assets/images/logo.png', height: 40),
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.5),
-                              ),
-                              child: const Icon(Icons.notifications_rounded, color: AppColors.primaryDark),
-                            ),
-                            Positioned(
-                              top: -2,
-                              right: -2,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.yellowDark,
+                        InkWell(
+                          onTap: () => context.push('/notifications'),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
                                   shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.5),
                                 ),
-                                child: Text('2', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                                child: const Icon(Icons.notifications_rounded, color: AppColors.primaryDark),
                               ),
-                            ),
-                          ],
+                              if (taxProvider.unreadNotificationCount > 0)
+                                Positioned(
+                                  top: -2,
+                                  right: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.yellowDark,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      taxProvider.unreadNotificationCount > 9 ? '9+' : taxProvider.unreadNotificationCount.toString(),
+                                      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -129,50 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 24),
                 
                 if (taxProvider.pendingBills.isNotEmpty)
-                  Column(
-                    children: [
-                      SizedBox(
-                        height: 204,
-                        child: PageView.builder(
-                          controller: _pageController,
-                          onPageChanged: (index) {
-                            setState(() {
-                              _currentCardIndex = index;
-                            });
-                          },
-                          itemCount: taxProvider.pendingBills.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                right: taxProvider.pendingBills.length > 1 ? 8.0 : 0.0, 
-                                left: taxProvider.pendingBills.length > 1 && index > 0 ? 8.0 : 0.0
-                              ),
-                              child: _buildMainCard(context, taxProvider.pendingBills[index], currencyFormatter),
-                            );
-                          },
-                        ),
-                      ),
-                      if (taxProvider.pendingBills.length > 1)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              taxProvider.pendingBills.length,
-                              (index) => Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: _currentCardIndex == index ? 16 : 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                color: _currentCardIndex == index ? AppColors.yellowDark : AppColors.textHint.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  )
+                  _buildMainCard(context, taxProvider, currencyFormatter)
+                else if (taxProvider.hasNop || taxProvider.hasNpwpd)
+                  _buildAllPaidCard(context)
                 else
                   _buildEmptyCard(context),
                 
@@ -238,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.check_circle_outline,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: _buildSummaryChip(
                         label: 'Belum Bayar',
@@ -248,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.error_outline,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: _buildSummaryChip(
                         label: 'Total Bayar',
@@ -389,11 +355,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  item.isSuccess ? 'Berhasil' : 'Gagal',
+                                  item.statusLabel,
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: item.isSuccess ? AppColors.success : AppColors.danger,
+                                    color: item.isSuccess
+                                        ? AppColors.success
+                                        : item.isPending
+                                            ? AppColors.warning
+                                            : AppColors.danger,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
@@ -500,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(16),
@@ -516,13 +486,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
                 ),
               ),
-              Icon(icon, color: color, size: 14),
+              Icon(icon, color: color, size: 16),
             ],
           ),
           const SizedBox(height: 8),
@@ -533,7 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
               value,
               maxLines: 1,
               style: GoogleFonts.inter(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -544,12 +514,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMainCard(BuildContext context, TaxBill bill, NumberFormat formatter) {
-    final unpaidCount = context.watch<TaxProvider>().belumBayarCount;
+  Widget _buildMainCard(BuildContext context, TaxProvider provider, NumberFormat formatter) {
+    final unpaidCount = provider.belumBayarCount;
+    final totalAmount = provider.pendingBills.fold(0.0, (sum, bill) => sum + bill.total);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.primaryDark,
         borderRadius: BorderRadius.circular(20),
@@ -566,25 +537,60 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.description, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Pajak Saya',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+              Row(
+                children: [
+                  const Icon(Icons.description, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Total Tagihan Saya',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              const Icon(Icons.chevron_right, color: Colors.white),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // NOP/NPWPD Summary
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Terdaftar: ${provider.nops.length} NOP, ${provider.hasNpwpd ? 1 : 0} NPWPD',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: Colors.white70,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => context.push('/tax-detail'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Lihat Detail Pajak',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white, size: 20),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -592,18 +598,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: AppColors.yellowDark.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.monetization_on_rounded,
-                    color: AppColors.yellowDark,
-                    size: 22,
-                  ),
+                  child: const Icon(Icons.monetization_on_rounded, color: AppColors.yellowDark),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,18 +615,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          formatter.format(bill.amount),
+                          formatter.format(totalAmount),
                           style: GoogleFonts.inter(
-                            fontSize: 18,
+                            fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: AppColors.primaryDark,
                           ),
@@ -635,15 +637,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: () => context.push('/detail', extra: bill.id),
+                  onPressed: () {
+                    // Navigate to PBB list if all are PBB, otherwise just go to PBB list for now 
+                    // since we are combining them. Or show bottom sheet.
+                    _showTagihanOptions(context, provider);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.yellowDark,
                     foregroundColor: AppColors.primaryDark,
                     elevation: 0,
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -652,7 +655,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Lihat',
+                        'Lihat Detail',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -664,6 +667,206 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTagihanOptions(BuildContext context, TaxProvider provider) {
+    // If only one type of tax exists, or we want to show a bottom sheet grouping by tax id.
+    // Let's create a bottom sheet to show the unpaid bills by NOP/NPWPD
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.only(top: 24, bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pilih Tagihan',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  itemCount: provider.pendingBills.length,
+                  itemBuilder: (context, index) {
+                    final bill = provider.pendingBills[index];
+                    final currencyFormatter = NumberFormat.currency(
+                      locale: 'id_ID',
+                      symbol: 'Rp ',
+                      decimalDigits: 0,
+                    );
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgWhite,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.2)),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        title: Text(
+                          bill.title,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(
+                              'ID: ${bill.taxId}',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              currencyFormatter.format(bill.total),
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.danger,
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            context.push('/detail', extra: bill.id);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryDark,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Bayar'),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAllPaidCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.success.withValues(alpha: 0.25),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.success.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              size: 44,
+              color: AppColors.success,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Semua Tagihan Sudah Lunas',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: AppColors.primaryDark,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tidak ada tagihan pajak yang perlu\ndibayar saat ini.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push('/pbb-list'),
+              icon: const Icon(Icons.list_alt_rounded, size: 18),
+              label: const Text('Lihat Pajak Terdaftar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
