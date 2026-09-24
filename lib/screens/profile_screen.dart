@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../constants/colors.dart';
-import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
-import '../utils/responsive.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -16,204 +13,251 @@ class ProfileScreen extends StatelessWidget {
     final taxProvider = context.watch<TaxProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.surface, // Clean white bg matching figma
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-            horizontal: context.pagePadding,
-            vertical: context.isSmallPhone ? 12 : 20,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Text(
-                'Profil',
-                style: GoogleFonts.lora(
-                  fontSize: context.sp(28),
-                  fontWeight: FontWeight.w600,
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.primaryDark,
-                ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: Color(0xFFC4E0F4), // Light blue to match Home
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 40,
+              right: -20,
+              child: Image.asset(
+                'assets/images/illustration.png',
+                height: 180,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 32),
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  // Header section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Icon(Icons.settings, color: AppColors.primaryDark),
+                      ],
+                    ),
+                  ),
+                  
+                  // Profile Info
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
 
-              // Avatar & Profile Info
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.bgWhite,
-                        border: Border.all(
-                          color: AppColors.textHint.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                        image: const DecorationImage(
-                          image: AssetImage('assets/images/logo.png'), // Use existing asset for now, or just an icon
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.person, size: 50, color: AppColors.primaryDark), // Placeholder avatar
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Dexa Wahnugrah',
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '+62 812-3456-7890',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF38BDF8), // Light blue from figma
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.verified, color: Colors.white, size: 14),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Verified Account',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Akun Section
-              _buildSection(
-                title: 'Akun',
-                items: [
-                  _buildMenuItem(Icons.person_outline, 'Edit Profil'),
-                  _buildMenuDivider(),
-                  _buildMenuItem(Icons.account_balance_outlined, 'Rekening Bank'),
-                  _buildMenuDivider(),
-                  _buildMenuItem(Icons.credit_card_outlined, 'Kartu Tertaut'),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Pajak Terdaftar Section
-              _buildSection(
-                title: 'Pajak Terdaftar',
-                items: taxProvider.pendingBills.isEmpty
-                    ? [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            'Belum ada pajak yang didaftarkan.',
-                            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
-                          ),
-                        )
-                      ]
-                    : taxProvider.pendingBills.map((bill) {
-                        final config = TaxConfigManager.getDetailConfig(bill.title);
-                        return Column(
-                          children: [
-                            ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: config.color.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(config.icon, color: config.color, size: 20),
-                              ),
-                              title: Text(
-                                bill.title,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                taxProvider.userName ?? 'Akun Pengguna',
                                 style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
                                   color: AppColors.primaryDark,
                                 ),
                               ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    bill.taxId,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary,
-                                    ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Pengguna Aplikasi Pajak',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Main Content
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: AppColors.bgWhite,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(24),
+                          topRight: Radius.circular(24),
+                        ),
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Informasi Akun
+                            _buildInfoCard(taxProvider),
+                            
+                            const SizedBox(height: 24),
+                            
+                            // Menu Pengaturan
+                            Text(
+                              'Menu Pengaturan',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.03),
+                                    offset: const Offset(0, 4),
+                                    blurRadius: 10,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Jatuh Tempo: ${DateFormat('dd MMM yyyy', 'id_ID').format(bill.dueDate)}',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.danger,
-                                    ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildMenuItem(Icons.person_outline, 'Edit Profil', onTap: () => context.push('/edit-profile')),
+                                  _buildMenuDivider(),
+                                  _buildMenuItem(Icons.account_balance_outlined, 'Kelola Rekening Bank', onTap: () => context.push('/linked-bank')),
+                                  _buildMenuDivider(),
+                                  _buildMenuItem(Icons.security_outlined, 'Keamanan Akun', onTap: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                      ),
+                                      builder: (context) => Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 20),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Keamanan Akun',
+                                              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            ListTile(
+                                              leading: const Icon(Icons.lock_outline, color: AppColors.primary),
+                                              title: Text('Ganti Kata Sandi', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                                              trailing: const Icon(Icons.chevron_right, size: 20),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                context.push('/change-password');
+                                              },
+                                            ),
+                                            const Divider(indent: 16, endIndent: 16),
+                                            ListTile(
+                                              leading: const Icon(Icons.dialpad, color: AppColors.primary),
+                                              title: Text('Ganti PIN Transaksi', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                                              trailing: const Icon(Icons.chevron_right, size: 20),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                context.push('/change-pin');
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                  _buildMenuDivider(),
+                                  _buildMenuItem(
+                                    Icons.notifications_none_outlined,
+                                    'Notifikasi',
+                                    onTap: () => context.push('/notifications'),
                                   ),
                                 ],
                               ),
                             ),
-                            if (bill != taxProvider.pendingBills.last) _buildMenuDivider(),
+                            
+                            const SizedBox(height: 24),
+                            
+                            // Informasi
+                            Text(
+                              'Informasi',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.03),
+                                    offset: const Offset(0, 4),
+                                    blurRadius: 10,
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildMenuItem(Icons.help_outline_rounded, 'FAQ', onTap: () => context.push('/faq')),
+                                  _buildMenuDivider(),
+                                  _buildMenuItem(Icons.privacy_tip_outlined, 'Kebijakan Privasi', onTap: () => context.push('/privacy-policy')),
+                                  _buildMenuDivider(),
+                                  _buildMenuItem(Icons.description_outlined, 'Syarat dan Ketentuan', onTap: () => context.push('/terms')),
+                                ],
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 32),
+                            
+                            // Logout Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  await context.read<TaxProvider>().logout();
+                                  if (context.mounted) context.go('/login');
+                                },
+                                icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
+                                label: Text(
+                                  'Logout',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.danger,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: AppColors.danger),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  backgroundColor: AppColors.dangerLight.withValues(alpha: 0.2),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 40),
                           ],
-                        );
-                      }).toList(),
-              ),
-              const SizedBox(height: 24),
-
-              // General Section
-              _buildSection(
-                title: 'General',
-                items: [
-                  _buildMenuItem(Icons.help_outline_rounded, 'Pusat Bantuan'),
-                  _buildMenuDivider(),
-                  _buildMenuItem(Icons.privacy_tip_outlined, 'Kebijakan Privasi'),
-                  _buildMenuDivider(),
-                  _buildMenuItem(Icons.description_outlined, 'Ketentuan Layanan'),
-                  _buildMenuDivider(),
-                  _buildMenuItem(
-                    Icons.logout_rounded,
-                    'Logout',
-                    textColor: AppColors.danger,
-                    iconColor: AppColors.danger,
-                    onTap: () {
-                      context.go('/login');
-                    },
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSection({required String title, required List<Widget> items}) {
+  Widget _buildInfoCard(TaxProvider taxProvider) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -227,29 +271,68 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Section Header (Dark)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: AppColors.primaryDark,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Informasi Akun',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.textHint, size: 20),
+              ],
             ),
           ),
-          // Section Items
-          ...items,
+          _buildMenuDivider(),
+          _buildInfoRow(Icons.person_outline, 'Nama Lengkap', taxProvider.userName ?? '-'),
+          _buildMenuDivider(),
+          _buildInfoRow(Icons.badge_outlined, 'NIK', '317402120***0001'),
+          _buildMenuDivider(),
+          _buildInfoRow(Icons.phone_outlined, 'No. HP', taxProvider.userPhone ?? '-'),
+          _buildMenuDivider(),
+          _buildInfoRow(Icons.email_outlined, 'Email', taxProvider.userEmail ?? '-'),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.bgBlueLight,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: AppColors.primaryBlue),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.primaryDark,
+            ),
+          ),
         ],
       ),
     );

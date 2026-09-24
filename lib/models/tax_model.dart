@@ -119,7 +119,7 @@ class SampleData {
       route: '/detail-pajak',
     ),
     TaxService(
-      name: 'Lainnya',
+      name: 'Pajak Lainnya',
       icon: Icons.more_horiz_rounded,
       color: const Color(0xFF6B7280),
       route: '/detail-pajak',

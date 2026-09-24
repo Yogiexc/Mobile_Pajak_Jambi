@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Brand Colors based on Figma "SIMPATTI"
   static const Color primaryDark = Color(0xFF1B2332); // Dark color for buttons like "Masuk"
   static const Color primaryBlue = Color(0xFF1E88E5); // Blue accents
   

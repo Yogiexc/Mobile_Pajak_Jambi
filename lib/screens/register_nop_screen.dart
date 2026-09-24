@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../constants/colors.dart';
 import '../constants/tax_config.dart';
 import '../providers/tax_provider.dart';
-import '../utils/responsive.dart';
+import '../widgets/tax_preview_dialog.dart';
 
 class RegisterNopScreen extends StatefulWidget {
   const RegisterNopScreen({super.key});
@@ -21,7 +21,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
   final List<Map<String, String>> _addedTaxes = [];
 
   final List<MainMenuConfig> _registerOptions = TaxConfigManager.mainMenus
-      .where((menu) => menu.title != 'BPHTB') // Exclude BPHTB because it's transactional
+      .where((menu) => menu.title == 'Pajak PBB' || menu.title == 'Pajak Lainnya')
       .toList();
 
   @override
@@ -30,17 +30,130 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
     _selectedConfig = _registerOptions.first;
   }
 
-  void _handleAddTax() {
-    if (_taxIdController.text.isNotEmpty) {
-      // Add to provider
-      context.read<TaxProvider>().addBill(_taxIdController.text, _selectedConfig.title);
-      
-      // Keep track locally for UI feedback
+  bool _isLoading = false;
+
+  Future<void> _handleAddTax() async {
+    if (_taxIdController.text.isEmpty) return;
+    final provider = context.read<TaxProvider>();
+    final taxId = _taxIdController.text.trim();
+    final isNpwpd = _selectedConfig.title == 'Pajak Lainnya';
+
+    if (isNpwpd && provider.hasNpwpd) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda sudah mendaftarkan NPWPD. Satu akun hanya boleh memiliki 1 NPWPD.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Cegah duplikat NOP: jika NOP sudah terdaftar, tampilkan dialog informatif
+    if (!isNpwpd) {
+      final isDuplicate = provider.nops.any(
+        (n) => n.trim().toUpperCase() == taxId.toUpperCase(),
+      );
+      if (isDuplicate) {
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(Icons.info_rounded, color: AppColors.primaryBlue, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  'NOP Sudah Terdaftar',
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                ),
+              ],
+            ),
+            content: Text(
+              'NOP $taxId sudah terdaftar di akun Anda. Anda tidak perlu mendaftarkannya lagi.\n\nSilakan lihat daftar objek pajak yang sudah ada.',
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'Tutup',
+                  style: GoogleFonts.inter(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.push('/pbb-list');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  'Lihat Daftar PBB',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      late final Map<String, dynamic> preview;
+      late final Map<String, String> rows;
+      if (isNpwpd) {
+        preview = await provider.checkNpwpd(taxId);
+        rows = {
+          'NPWPD': preview['npwpd_number']?.toString() ?? taxId,
+          'Nama Usaha': preview['business_name']?.toString() ?? '-',
+          'Jenis Usaha': preview['business_type']?.toString() ?? '-',
+          'Pemilik': preview['owner_name']?.toString() ?? '-',
+        };
+      } else {
+        preview = await provider.checkNop(taxId);
+        rows = {
+          'NOP': preview['nop_number']?.toString() ?? taxId,
+          'Objek Pajak': preview['object_name']?.toString() ?? '-',
+          'Pemilik': preview['owner_name']?.toString() ?? '-',
+          'Alamat': preview['object_address']?.toString() ?? '-',
+        };
+      }
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      final confirmed = await showTaxObjectConfirmDialog(
+        context: context,
+        title: isNpwpd ? 'Konfirmasi NPWPD' : 'Konfirmasi NOP',
+        rows: rows,
+      );
+      if (!confirmed || !mounted) return;
+
+      setState(() => _isLoading = true);
+      if (isNpwpd) {
+        await provider.addNpwpd(taxId);
+      } else {
+        await provider.addNop(taxId);
+      }
+      if (!mounted) return;
       setState(() {
-        _addedTaxes.add({'type': _selectedConfig.title, 'taxId': _taxIdController.text});
+        final namaObjek = isNpwpd ? preview['business_name']?.toString() : preview['object_name']?.toString();
+        _addedTaxes.add({
+          'type': _selectedConfig.title, 
+          'taxId': taxId,
+          'namaObjek': namaObjek ?? '',
+        });
         _taxIdController.clear();
+        _isLoading = false;
       });
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${_selectedConfig.title} berhasil didaftarkan!'),
@@ -48,10 +161,17 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
           duration: const Duration(seconds: 2),
         ),
       );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
     }
   }
 
   void _finishSetup() {
+    context.read<TaxProvider>().completeOnboarding();
     context.go('/home');
   }
 
@@ -63,227 +183,271 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TaxProvider>();
+    final canFinish = provider.hasNop || provider.hasNpwpd;
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Daftarkan Pajak Anda',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primaryDark,
-          ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: AppColors.welcomeBg,
         ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(context.pagePadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Punya tagihan yang harus dibayar?',
-                      style: GoogleFonts.lora(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        color: AppColors.primaryDark,
-                        height: 1.2,
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 10),
+                      // Logo
+                      Image.asset(
+                        'assets/images/logo.png',
+                        height: 50,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Daftarkan Nomor Objek Pajak (NOP) atau Nomor Pokok Wajib Pajak Daerah (NPWPD) Anda sekarang. Sistem kami akan mendeteksi otomatis usaha Anda.',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                        height: 1.4,
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Tax Type Dropdown
-                    Text(
-                      'Jenis Registrasi',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.bgWhite,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<MainMenuConfig>(
-                          value: _selectedConfig,
-                          isExpanded: true,
-                          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: AppColors.primaryDark,
-                          ),
-                          onChanged: (MainMenuConfig? newValue) {
-                            setState(() {
-                              _selectedConfig = newValue!;
-                              _taxIdController.clear();
-                            });
-                          },
-                          items: _registerOptions.map<DropdownMenuItem<MainMenuConfig>>((MainMenuConfig config) {
-                            return DropdownMenuItem<MainMenuConfig>(
-                              value: config,
-                              child: Text(config.title),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 20),
-                    
-                    // Dynamic Tax ID Input
-                    Text(
-                      _selectedConfig.inputLabel,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _taxIdController,
-                      keyboardType: _selectedConfig.keyboardType,
-                      textCapitalization: TextCapitalization.characters,
-                      decoration: InputDecoration(
-                        hintText: _selectedConfig.hintText,
-                        hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
-                        filled: true,
-                        fillColor: AppColors.bgWhite,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primaryDark),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Add Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: OutlinedButton.icon(
-                        onPressed: _handleAddTax,
-                        icon: const Icon(Icons.add, color: AppColors.primaryDark),
-                        label: Text(
-                          'Daftarkan Sekarang',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryDark,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.primaryDark),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 32),
-                    
-                    // Added Taxes Preview
-                    if (_addedTaxes.isNotEmpty) ...[
+                      const SizedBox(height: 24),
                       Text(
-                        'Pajak terdaftar (${_addedTaxes.length}):',
+                        'Daftarkan\nPajak Anda',
+                        style: GoogleFonts.lora(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          color: AppColors.primaryDark,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Daftarkan Nomor Objek Pajak (NOP) atau Nomor Pokok Wajib Pajak Daerah (NPWPD).',
                         style: GoogleFonts.inter(
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryDark,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _addedTaxes.length,
-                        itemBuilder: (context, index) {
-                          final item = _addedTaxes[index];
-                          final config = TaxConfigManager.getMainMenu(item['type']!);
-                          
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.bgBlueLight,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.2)),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(config.icon, color: config.color, size: 20),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['type']!,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.primaryDark,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${config.inputLabel.split('(').first.trim()}: ${item['taxId']!}',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 11,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
+                      
+                      const SizedBox(height: 32),
+                        
+                        // Card Form
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Tax Type Dropdown
+                              Text(
+                                'Jenis Registrasi',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgWhite,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<MainMenuConfig>(
+                                    value: _selectedConfig,
+                                    isExpanded: true,
+                                    icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: AppColors.primaryDark,
+                                    ),
+                                    onChanged: (MainMenuConfig? newValue) {
+                                      setState(() {
+                                        _selectedConfig = newValue!;
+                                        _taxIdController.clear();
+                                      });
+                                    },
+                                    items: _registerOptions.map<DropdownMenuItem<MainMenuConfig>>((MainMenuConfig config) {
+                                      return DropdownMenuItem<MainMenuConfig>(
+                                        value: config,
+                                        child: Text(config.title),
+                                      );
+                                    }).toList(),
                                   ),
                                 ),
-                                const Icon(Icons.check_circle, color: AppColors.primaryBlue, size: 20),
-                              ],
+                              ),
+                              
+                              const SizedBox(height: 20),
+                              
+                              // Dynamic Tax ID Input
+                              Text(
+                                _selectedConfig.inputLabel,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _taxIdController,
+                                keyboardType: _selectedConfig.keyboardType,
+                                textCapitalization: TextCapitalization.characters,
+                                decoration: InputDecoration(
+                                  hintText: _selectedConfig.hintText,
+                                  hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 13),
+                                  filled: true,
+                                  fillColor: AppColors.bgWhite,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: AppColors.textHint.withValues(alpha: 0.3)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: AppColors.primaryDark),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _selectedConfig.title == 'Pajak Lainnya'
+                                    ? 'Contoh data uji: 01.234.567.8-331'
+                                    : 'Contoh data uji: 3671010203040001',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 24),
+                              
+                              // Add Button
+                              SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: OutlinedButton.icon(
+                                  onPressed: _isLoading ? null : _handleAddTax,
+                                  icon: _isLoading 
+                                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                    : const Icon(Icons.add, color: AppColors.primaryDark),
+                                  label: Text(
+                                    _isLoading ? 'Mencari Data...' : 'Daftarkan Sekarang',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: _isLoading ? Colors.grey : AppColors.primaryDark,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: _isLoading ? Colors.grey : AppColors.primaryDark),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Added Taxes Preview
+                        if (_addedTaxes.isNotEmpty) ...[
+                          Text(
+                            'Pajak terdaftar (${_addedTaxes.length}):',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryDark,
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  ],
+                          ),
+                          const SizedBox(height: 12),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _addedTaxes.length,
+                            itemBuilder: (context, index) {
+                              final item = _addedTaxes[index];
+                              final config = TaxConfigManager.getMainMenu(item['type']!);
+                              
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgBlueLight,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.2)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(config.icon, color: config.color, size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item['type']!,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.primaryBlue,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          if (item['namaObjek'] != null && item['namaObjek']!.isNotEmpty)
+                                            Text(
+                                              item['namaObjek']!,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.primaryDark,
+                                              ),
+                                            ),
+                                          Text(
+                                            '${config.inputLabel.split('(').first.trim()}: ${item['taxId']!}',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(Icons.check_circle, color: AppColors.primaryBlue, size: 20),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
             ),
             
             // Bottom Actions
             Container(
-              padding: EdgeInsets.all(context.pagePadding),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -300,7 +464,7 @@ class _RegisterNopScreenState extends State<RegisterNopScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _finishSetup,
+                      onPressed: canFinish ? _finishSetup : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDark,
                         foregroundColor: Colors.white,
