@@ -47,7 +47,7 @@ class NpwpdDetailScreen extends StatelessWidget {
     }).toList();
     final unpaidBills = taxBills.where((b) => !b.isPaid).toList();
     final hasUnpaid = unpaidBills.isNotEmpty;
-    final totalUnpaid = unpaidBills.fold<double>(0, (sum, b) => sum + b.totalAmount);
+
 
     return Scaffold(
       backgroundColor: AppColors.bgWhite,
@@ -383,66 +383,6 @@ class NpwpdDetailScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: hasUnpaid ? Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Total Tertunggak',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    currencyFormatter.format(totalUnpaid),
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.warning,
-                    ),
-                  ),
-                ],
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  context.push('/tax-detail');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.warning,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: Text(
-                  'Bayar Semua',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ) : null,
     );
   }
 

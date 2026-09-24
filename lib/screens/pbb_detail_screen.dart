@@ -238,7 +238,7 @@ class PbbDetailScreen extends StatelessWidget {
                             if (!isPaid && pendingBill != null)
                               ElevatedButton(
                                 onPressed: () {
-                                  context.push('/tax-detail');
+                                  context.push('/detail', extra: pendingBill.id);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primaryDark,
