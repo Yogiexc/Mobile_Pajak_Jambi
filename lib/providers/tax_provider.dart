@@ -304,7 +304,6 @@ class TaxProvider extends ChangeNotifier {
   }
 
   Future<void> registerUser(
-    String name,
     String email,
     String phone,
     String password,
@@ -314,7 +313,6 @@ class TaxProvider extends ChangeNotifier {
   }) async {
     await _api.post('/register', {
       'nik': nik,
-      'full_name': name,
       'email': email,
       'phone_number': phone,
       'password': password,

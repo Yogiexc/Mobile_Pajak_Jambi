@@ -104,7 +104,7 @@ class _ForgotAuthScreenState extends State<ForgotAuthScreen> {
               controller: _nikController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                hintText: 'Masukkan 16 digit NIK',
+                hintText: 'Masukkan 18 digit NIK',
                 hintStyle: GoogleFonts.inter(color: AppColors.textHint, fontSize: 14),
                 filled: true,
                 fillColor: AppColors.bgWhite,

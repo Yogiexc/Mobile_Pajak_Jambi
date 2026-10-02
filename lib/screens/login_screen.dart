@@ -34,6 +34,13 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    if (nik.length != 18) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('NIK harus terdiri dari 18 digit angka.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       await context.read<TaxProvider>().loginUser(nik, _passwordController.text);
@@ -125,9 +132,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           enableSuggestions: false,
                           autocorrect: false,
                           keyboardType: TextInputType.number,
-                          maxLength: 16,
+                          maxLength: 18,
                           decoration: const InputDecoration(
-                            hintText: '16 digit NIK',
+                            hintText: '18 digit NIK',
                             counterText: '',
                           ),
                         ),
