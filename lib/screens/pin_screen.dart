@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/colors.dart';
@@ -16,6 +17,7 @@ class _PinScreenState extends State<PinScreen> {
   String _pin = '';
 
   void _onNumberTap(String number) {
+    HapticFeedback.lightImpact();
     if (_pin.length < 6) {
       setState(() {
         _pin += number;
@@ -28,6 +30,7 @@ class _PinScreenState extends State<PinScreen> {
   }
 
   void _onBackspace() {
+    HapticFeedback.lightImpact();
     if (_pin.isNotEmpty) {
       setState(() {
         _pin = _pin.substring(0, _pin.length - 1);

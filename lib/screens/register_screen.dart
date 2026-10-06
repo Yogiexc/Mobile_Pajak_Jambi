@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/tax_provider.dart';
 import '../constants/colors.dart';
+import '../widgets/shake_widget.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -29,6 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _pinString = '';
   String _confirmPinString = '';
   bool _isConfirmingPin = false;
+  final _shakeController = ShakeWidgetController();
 
   @override
   void dispose() {
@@ -42,6 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _onNumberTap(String number) {
+    HapticFeedback.lightImpact();
     if (_isConfirmingPin) {
       if (_confirmPinString.length < 6) {
         setState(() => _confirmPinString += number);
@@ -50,13 +54,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
             _pinController.text = _pinString;
             _handleRegister();
           } else {
+            _shakeController.shake();
+            HapticFeedback.vibrate();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('PIN tidak cocok, silakan coba lagi.'), backgroundColor: Colors.red),
             );
-            setState(() {
-              _pinString = '';
-              _confirmPinString = '';
-              _isConfirmingPin = false;
+            Future.delayed(const Duration(milliseconds: 400), () {
+              if (mounted) {
+                setState(() {
+                  _pinString = '';
+                  _confirmPinString = '';
+                  _isConfirmingPin = false;
+                });
+              }
             });
           }
         }
@@ -72,6 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _onBackspace() {
+    HapticFeedback.lightImpact();
     if (_isConfirmingPin) {
       if (_confirmPinString.isNotEmpty) {
         setState(() => _confirmPinString = _confirmPinString.substring(0, _confirmPinString.length - 1));
@@ -282,23 +293,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 32),
           
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(6, (index) {
-              final isFilled = index < currentPin.length;
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 6),
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isFilled ? AppColors.primaryDark : AppColors.bgBlueLight,
-                  border: Border.all(
-                    color: isFilled ? AppColors.primaryDark : AppColors.textHint.withValues(alpha: 0.3),
+          ShakeWidget(
+            controller: _shakeController,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(6, (index) {
+                final isFilled = index < currentPin.length;
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isFilled ? AppColors.primaryDark : AppColors.bgBlueLight,
+                    border: Border.all(
+                      color: isFilled ? AppColors.primaryDark : AppColors.textHint.withValues(alpha: 0.3),
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
           
           const SizedBox(height: 32),
