@@ -81,177 +81,12 @@ class PbbListScreen extends StatelessWidget {
                         onRefresh: () => taxProvider.refreshDashboard(),
                         child: ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 96),
                           itemCount: nopList.length,
                           itemBuilder: (context, index) {
-                            final nop = nopList[index];
-                            final hasUnpaid = nop.hasUnpaid;
-                            final noBills = nop.bills.isEmpty;
-
-                            // Status label & warna
-                            String statusText;
-                            Color statusColor;
-                            IconData statusIcon;
-                            if (noBills) {
-                              statusText = 'Tidak Ada Tagihan';
-                              statusColor = AppColors.textHint;
-                              statusIcon = Icons.info_outline;
-                            } else if (hasUnpaid) {
-                              statusText = '${nop.unpaidBills.length} Belum Dibayar';
-                              statusColor = AppColors.warning;
-                              statusIcon = Icons.access_time;
-                            } else {
-                              statusText = 'Semua Lunas';
-                              statusColor = AppColors.success;
-                              statusIcon = Icons.check_circle;
-                            }
-
-                            return InkWell(
-                              onTap: () => context.push('/pbb-detail/${nop.nopNumber}'),
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 14),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.05),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Header: ikon + nama + status
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Hero(
-                                          tag: 'pbb_icon_${nop.nopNumber}',
-                                          child: Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue.withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: const Icon(Icons.home_work, color: Colors.blue, size: 24),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 14),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                nop.objectName,
-                                                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
-                                              ),
-                                              const SizedBox(height: 3),
-                                              Text(
-                                                'NOP: ${nop.nopNumber}',
-                                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: statusColor.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(statusIcon, size: 11, color: statusColor),
-                                              const SizedBox(width: 3),
-                                              Text(statusText, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: statusColor)),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    // Ringkasan periode tagihan
-                                    if (nop.bills.isNotEmpty) ...[
-                                      const SizedBox(height: 12),
-                                      const Divider(height: 1),
-                                      const SizedBox(height: 12),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 6,
-                                        children: nop.bills.map((bill) {
-                                          final paid = bill.isPaid;
-                                          return Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                            decoration: BoxDecoration(
-                                              color: (paid ? AppColors.success : AppColors.warning).withValues(alpha: 0.08),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: (paid ? AppColors.success : AppColors.warning).withValues(alpha: 0.3)),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(paid ? Icons.check_circle : Icons.radio_button_unchecked, size: 12, color: paid ? AppColors.success : AppColors.warning),
-                                                const SizedBox(width: 5),
-                                                Text(
-                                                  '${bill.taxPeriod}  ${currencyFormatter.format(bill.totalAmount)}',
-                                                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: paid ? AppColors.success : AppColors.warning),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ],
-
-                                    // Footer: total belum bayar + chevron
-                                    if (hasUnpaid) ...[
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text('Total Belum Dibayar', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
-                                              Text(
-                                                currencyFormatter.format(nop.totalUnpaid),
-                                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
-                                              ),
-                                            ],
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.primaryDark,
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: Text('Bayar', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
-                                          ),
-                                        ],
-                                      ),
-                                    ] else ...[
-                                      const SizedBox(height: 8),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text('Lihat Detail', style: GoogleFonts.inter(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.w600)),
-                                            const SizedBox(width: 4),
-                                            const Icon(Icons.chevron_right, size: 16, color: AppColors.primaryBlue),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
+                            return _NopCard(
+                              nop: nopList[index],
+                              currencyFormatter: currencyFormatter,
                             );
                           },
                         ),
@@ -337,7 +172,7 @@ class PbbListScreen extends StatelessWidget {
           ),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
               itemCount: 4,
               itemBuilder: (context, index) {
                 return Container(
@@ -350,6 +185,228 @@ class PbbListScreen extends StatelessWidget {
                   height: 120, // Approximate height of the card
                 );
               },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NopCard extends StatelessWidget {
+  final NopData nop;
+  final NumberFormat currencyFormatter;
+
+  const _NopCard({
+    required this.nop,
+    required this.currencyFormatter,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUnpaid = nop.hasUnpaid;
+    final noBills = nop.bills.isEmpty;
+
+    final String statusText;
+    final Color statusColor;
+    final IconData statusIcon;
+    if (noBills) {
+      statusText = 'Tidak Ada Tagihan';
+      statusColor = AppColors.textHint;
+      statusIcon = Icons.info_outline;
+    } else if (hasUnpaid) {
+      statusText = '${nop.unpaidBills.length} Belum Dibayar';
+      statusColor = AppColors.warning;
+      statusIcon = Icons.circle_outlined;
+    } else {
+      statusText = 'Semua Lunas';
+      statusColor = AppColors.success;
+      statusIcon = Icons.check_circle;
+    }
+
+    final sortedBills = [...nop.bills]..sort((a, b) {
+        final ay = int.tryParse(a.taxPeriod) ?? 0;
+        final by = int.tryParse(b.taxPeriod) ?? 0;
+        return by.compareTo(ay);
+      });
+    final bills = sortedBills.take(4).toList()
+      ..sort((a, b) {
+        final ay = int.tryParse(a.taxPeriod) ?? 0;
+        final by = int.tryParse(b.taxPeriod) ?? 0;
+        return ay.compareTo(by);
+      });
+    final hiddenCount = sortedBills.length - bills.length;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE6EBF1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/pbb-detail/${nop.nopNumber}'),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Hero(
+                      tag: 'pbb_icon_${nop.nopNumber}',
+                      child: Container(  
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F3FC),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.home_rounded, color: Color(0xFF3B82F6), size: 22),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nop.objectName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              height: 1.35,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'NOP: ${nop.nopNumber}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(statusIcon, size: 12, color: statusColor),
+                                const SizedBox(width: 4),
+                                Text(
+                                  statusText,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: statusColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (bills.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: Color(0xFFE8EDF2)),
+                  const SizedBox(height: 12),
+                  for (var i = 0; i < bills.length; i += 2) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(child: _PeriodChip(bill: bills[i], formatter: currencyFormatter)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: i + 1 < bills.length
+                              ? _PeriodChip(bill: bills[i + 1], formatter: currencyFormatter)
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (hiddenCount > 0) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      'Lihat $hiddenCount periode lainnya',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryBlue,
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PeriodChip extends StatelessWidget {
+  final NopBill bill;
+  final NumberFormat formatter;
+
+  const _PeriodChip({required this.bill, required this.formatter});
+
+  @override
+  Widget build(BuildContext context) {
+    final paid = bill.isPaid;
+    final color = paid ? AppColors.success : AppColors.warning;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            paid ? Icons.check_circle : Icons.circle_outlined,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              '${bill.taxPeriod}  ${formatter.format(bill.totalAmount)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
             ),
           ),
         ],
