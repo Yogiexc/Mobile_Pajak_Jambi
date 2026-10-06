@@ -69,7 +69,8 @@ class _CheckTaxScreenState extends State<CheckTaxScreen> {
           title: 'Konfirmasi NOP',
           rows: {
             'NOP': preview['nop_number']?.toString() ?? taxId,
-            'Objek Pajak': preview['object_name']?.toString() ?? '-',
+            if (preview['object_name'] != null && preview['object_name'].toString().isNotEmpty)
+              'Objek Pajak': preview['object_name'].toString(),
             'Pemilik': preview['owner_name']?.toString() ?? '-',
             'Alamat': preview['object_address']?.toString() ?? '-',
           },

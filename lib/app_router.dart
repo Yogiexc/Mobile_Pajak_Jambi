@@ -33,6 +33,7 @@ import 'screens/pbb_detail_screen.dart';
 import 'screens/npwpd_detail_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/tax_detail_screen.dart';
+import 'screens/work_in_progress_screen.dart';
 import 'utils/page_transitions.dart';
 import 'providers/tax_provider.dart';
 
@@ -140,6 +141,11 @@ class AppRouter {
                   AppPage.fade(state, const ProfileScreen()),
             ),
           ],
+        ),
+        GoRoute(
+          path: '/wip',
+          pageBuilder: (context, state) =>
+              AppPage.slide(state, const WorkInProgressScreen()),
         ),
         GoRoute(
           path: '/tax-detail',
