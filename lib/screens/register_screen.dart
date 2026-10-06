@@ -124,9 +124,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
     
-    if (_nikController.text.length != 18) {
+    if (_nikController.text.length < 16 || _nikController.text.length > 20) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NIK harus terdiri dari 18 digit angka.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('NIK harus terdiri dari 16 hingga 20 digit angka.'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -193,8 +193,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         TextFormField(
           controller: _nikController,
           keyboardType: TextInputType.number,
-          maxLength: 18,
-          decoration: const InputDecoration(hintText: 'Masukkan 18 digit NIK', counterText: ''),
+          maxLength: 20,
+          decoration: const InputDecoration(hintText: 'Masukkan 16 digit NIK', counterText: ''),
         ),
         const SizedBox(height: 20),
         

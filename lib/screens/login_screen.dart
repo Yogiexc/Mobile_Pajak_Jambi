@@ -34,9 +34,9 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (nik.length != 18) {
+    if (nik.length < 16 || nik.length > 20) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NIK harus terdiri dari 18 digit angka.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('NIK harus terdiri dari 16 hingga 20 digit angka.'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           enableSuggestions: false,
                           autocorrect: false,
                           keyboardType: TextInputType.number,
-                          maxLength: 18,
+                          maxLength: 20,
                           decoration: const InputDecoration(
                             hintText: '18 digit NIK',
                             counterText: '',
