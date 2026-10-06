@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 import '../constants/colors.dart';
 import '../providers/tax_provider.dart';
 
@@ -45,8 +46,10 @@ class PbbListScreen extends StatelessWidget {
         height: double.infinity,
         decoration: const BoxDecoration(color: Colors.white),
         child: SafeArea(
-          child: nopList.isEmpty
-              ? RefreshIndicator(
+          child: taxProvider.isLoading
+              ? _buildShimmerLoading(context)
+              : nopList.isEmpty
+                  ? RefreshIndicator(
                   onRefresh: () => taxProvider.refreshDashboard(),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -127,13 +130,16 @@ class PbbListScreen extends StatelessWidget {
                                     Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(12),
+                                        Hero(
+                                          tag: 'pbb_icon_${nop.nopNumber}',
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: const Icon(Icons.home_work, color: Colors.blue, size: 24),
                                           ),
-                                          child: const Icon(Icons.home_work, color: Colors.blue, size: 24),
                                         ),
                                         const SizedBox(width: 14),
                                         Expanded(
@@ -276,12 +282,17 @@ class PbbListScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.home_work_outlined, size: 80, color: AppColors.textHint.withValues(alpha: 0.5)),
+            Image.asset(
+              'assets/images/MaskotAngsaJambi_CariData.png',
+              height: 120,
+              errorBuilder: (context, error, stackTrace) =>
+                  Icon(Icons.home_work_outlined, size: 80, color: AppColors.textHint.withValues(alpha: 0.5)),
+            ),
             const SizedBox(height: 24),
             Text('Belum Ada PBB Terdaftar', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
             const SizedBox(height: 12),
             Text(
-              'Anda belum mendaftarkan Nomor Objek Pajak (NOP) PBB. Silakan daftarkan terlebih dahulu.',
+              'Ayo daftarkan Nomor Objek Pajak (NOP) PBB kamu sekarang!',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
             ),
@@ -305,6 +316,43 @@ class PbbListScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade200,
+      highlightColor: Colors.grey.shade50,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 4),
+            child: Container(width: 200, height: 24, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+            child: Container(width: 300, height: 16, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              itemCount: 4,
+              itemBuilder: (context, index) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  height: 120, // Approximate height of the card
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

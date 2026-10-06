@@ -81,10 +81,13 @@ class PbbDetailScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
-                          child: const Icon(Icons.home_work, color: Colors.blue, size: 28),
+                        Hero(
+                          tag: 'pbb_icon_${nopData.nopNumber}',
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+                            child: const Icon(Icons.home_work, color: Colors.blue, size: 28),
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
