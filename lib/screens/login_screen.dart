@@ -45,8 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await context.read<TaxProvider>().loginUser(nik, _passwordController.text);
       if (!mounted) return;
-      final tax = context.read<TaxProvider>();
-      context.go(tax.needsOnboarding ? '/register-nop' : '/home');
+      context.go('/home');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

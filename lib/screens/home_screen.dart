@@ -117,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 32),
                     Text(
-                      'Halo, ${taxProvider.userName?.split(' ').first ?? 'Pengguna'} ',
+                      'Halo, ${taxProvider.userName ?? 'Pengguna'} ',
                       style: GoogleFonts.lora(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
@@ -399,16 +399,8 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         if (config.title == 'Pajak PBB') {
           context.push('/pbb-list');
-        } else if (config.title == 'Pajak Lainnya') {
-          if (context.read<TaxProvider>().hasNpwpd) {
-            context.push('/other-taxes');
-          } else {
-            final encodedTitle = Uri.encodeComponent('Pajak Lainnya');
-            context.push('/check-tax/$encodedTitle');
-          }
         } else {
-          final encodedTitle = Uri.encodeComponent(config.title);
-          context.push('/check-tax/$encodedTitle');
+          context.push('/wip');
         }
       },
       child: Container(
@@ -892,10 +884,15 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.receipt_long_outlined, size: 56, color: AppColors.textHint),
+          Image.asset(
+            'assets/images/MaskotAngsaJambi_CariData.png',
+            height: 120,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.receipt_long_outlined, size: 56, color: AppColors.textHint),
+          ),
           const SizedBox(height: 20),
           Text(
-            'Belum ada tagihan',
+            'Belum Ada Tagihan PBB',
             style: GoogleFonts.inter(
               color: AppColors.primaryDark,
               fontSize: 18,
@@ -904,7 +901,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Daftarkan pajak untuk mulai menggunakan app',
+            'Daftarkan NOP PBB kamu sekarang untuk melihat tagihan',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: AppColors.textSecondary,
