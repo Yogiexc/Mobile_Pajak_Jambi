@@ -308,6 +308,7 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                         ),
                 ),
               ),
+              
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -336,7 +337,7 @@ class _AwaitingPaymentScreenState extends State<AwaitingPaymentScreen> {
                         ),
                 ),
               ),
-              const SizedBox(height: 12),
+
               TextButton(
                 onPressed: () => context.go('/home'),
                 child: Text(
